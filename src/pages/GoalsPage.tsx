@@ -4,6 +4,7 @@ import { NavBar } from '@/components/NavBar';
 import { Sidebar } from '@/components/Sidebar';
 import { Goals } from '@/components/Goals';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Toaster } from '@/components/ui/toaster';
 
 const GoalsPage = () => {
   const isMobile = useIsMobile();
@@ -17,6 +18,7 @@ const GoalsPage = () => {
           <Goals />
         </div>
       </div>
+      <Toaster />
     </div>
   );
 };

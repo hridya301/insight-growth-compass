@@ -1,10 +1,17 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Target, TrendingUp, Calendar, CheckCircle, PlusCircle, Flag } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useToast } from '@/hooks/use-toast';
 
 // Sample data for goals
 const quarterlyGoals = [
@@ -66,6 +73,19 @@ const annualGoals = [
     priority: 'Medium'
   }
 ];
+
+// Define the goal schema for form validation
+const goalSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  dueDate: z.string().refine(date => new Date(date) > new Date(), {
+    message: "Due date must be in the future"
+  }),
+  priority: z.enum(["Critical", "High", "Medium", "Low"]),
+  category: z.enum(["Quarterly", "Annual"])
+});
+
+type GoalFormValues = z.infer<typeof goalSchema>;
 
 const GoalCard: React.FC<{
   title: string;
@@ -142,16 +162,182 @@ const GoalCard: React.FC<{
 };
 
 export const Goals: React.FC = () => {
+  const [quarterlyList, setQuarterlyList] = useState(quarterlyGoals);
+  const [annualList, setAnnualList] = useState(annualGoals);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<GoalFormValues>({
+    resolver: zodResolver(goalSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      dueDate: "",
+      priority: "Medium",
+      category: "Quarterly"
+    }
+  });
+
+  const onSubmit = (values: GoalFormValues) => {
+    const newGoal = {
+      id: Date.now(),
+      title: values.title,
+      description: values.description,
+      progress: 0,
+      dueDate: values.dueDate,
+      status: "Early Stage",
+      priority: values.priority
+    };
+
+    if (values.category === "Quarterly") {
+      setQuarterlyList([...quarterlyList, newGoal]);
+    } else {
+      setAnnualList([...annualList, newGoal]);
+    }
+
+    toast({
+      title: "Goal Created",
+      description: `'${values.title}' has been added to your ${values.category.toLowerCase()} goals.`,
+    });
+
+    setDialogOpen(false);
+    form.reset();
+  };
+
   return (
     <div className="p-6 w-full space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Goals & Objectives</h1>
         <div className="flex items-center space-x-2">
           <Button variant="outline">Export Goals</Button>
-          <Button>
-            <PlusCircle size={16} className="mr-2" />
-            New Goal
-          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusCircle size={16} className="mr-2" />
+                New Goal
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Create New Goal</DialogTitle>
+                <DialogDescription>
+                  Define a new goal for your team or organization. All fields are required.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Goal Title</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Increase Revenue" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Describe the goal and how it will be measured" 
+                            className="min-h-[80px]"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="dueDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Due Date</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="priority"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Priority</FormLabel>
+                          <FormControl>
+                            <select
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                              {...field}
+                            >
+                              <option value="Critical">Critical</option>
+                              <option value="High">High</option>
+                              <option value="Medium">Medium</option>
+                              <option value="Low">Low</option>
+                            </select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Goal Category</FormLabel>
+                        <FormControl>
+                          <div className="flex space-x-4">
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                value="Quarterly"
+                                checked={field.value === "Quarterly"}
+                                onChange={() => field.onChange("Quarterly")}
+                                className="h-4 w-4"
+                              />
+                              <span>Quarterly Goal</span>
+                            </label>
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                value="Annual"
+                                checked={field.value === "Annual"}
+                                onChange={() => field.onChange("Annual")}
+                                className="h-4 w-4"
+                              />
+                              <span>Annual Goal</span>
+                            </label>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <DialogFooter>
+                    <Button type="submit">Create Goal</Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
       
@@ -219,7 +405,7 @@ export const Goals: React.FC = () => {
               <Button variant="outline" size="sm">View All</Button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {quarterlyGoals.map((goal) => (
+              {quarterlyList.map((goal) => (
                 <GoalCard
                   key={goal.id}
                   title={goal.title}
@@ -242,7 +428,7 @@ export const Goals: React.FC = () => {
               <Button variant="outline" size="sm">View All</Button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {annualGoals.map((goal) => (
+              {annualList.map((goal) => (
                 <GoalCard
                   key={goal.id}
                   title={goal.title}
