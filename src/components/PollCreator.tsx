@@ -5,7 +5,8 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogClose 
+  DialogClose,
+  DialogDescription 
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -171,6 +172,19 @@ export const PollCreator = () => {
     setIntegration(null);
   };
 
+  const getStepTitle = () => {
+    switch (currentStep) {
+      case 1: return "Question & answers";
+      case 2: return "Choose Template";
+      case 3: return "Poll Placement";
+      case 4: return "Schedule";
+      case 5: return "Advanced Settings";
+      case 6: return "Integration";
+      case 7: return "Share or Embed Poll";
+      default: return "";
+    }
+  };
+
   const getStepContent = () => {
     switch (currentStep) {
       case 1:
@@ -258,7 +272,7 @@ export const PollCreator = () => {
       case 2:
         return (
           <div className="space-y-6">
-            <h3 className="text-lg font-medium">Choose Template</h3>
+            <p className="text-sm text-gray-500 mb-4">Select a template for your poll</p>
             
             <div className="grid grid-cols-2 gap-4">
               <Card className="cursor-pointer hover:border-indigo-500 transition-all">
@@ -303,8 +317,7 @@ export const PollCreator = () => {
       case 3:
         return (
           <div className="space-y-6">
-            <h3 className="text-lg font-medium">Poll Placement</h3>
-            <p className="text-sm text-gray-500">Choose where your poll will appear</p>
+            <p className="text-sm text-gray-500 mb-4">Choose where your poll will appear</p>
             
             <RadioGroup defaultValue={pollPlacement} onValueChange={setPollPlacement}>
               <div className="flex items-center space-x-2 mb-3">
@@ -329,7 +342,6 @@ export const PollCreator = () => {
       case 4:
         return (
           <div className="space-y-6">
-            <h3 className="text-lg font-medium">Schedule</h3>
             <p className="text-sm text-gray-500 mb-4">Set when your poll should start and end</p>
             
             <div className="grid grid-cols-2 gap-4 mb-6">
@@ -410,7 +422,7 @@ export const PollCreator = () => {
       case 5:
         return (
           <div className="space-y-6">
-            <h3 className="text-lg font-medium">Advanced Settings</h3>
+            <p className="text-sm text-gray-500 mb-4">Configure advanced poll settings</p>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -475,7 +487,6 @@ export const PollCreator = () => {
       case 6:
         return (
           <div className="space-y-6">
-            <h3 className="text-lg font-medium">Integration</h3>
             <p className="text-sm text-gray-500 mb-4">Connect your poll to other services</p>
             
             <div className="grid grid-cols-1 gap-3">
@@ -544,7 +555,6 @@ export const PollCreator = () => {
       case 7:
         return (
           <div className="space-y-6">
-            <h3 className="text-lg font-medium">Share or Embed Poll</h3>
             <p className="text-sm text-gray-500 mb-4">Get sharable links or embed code</p>
             
             <div className="space-y-4">
@@ -702,20 +712,17 @@ export const PollCreator = () => {
 
             {/* Right content */}
             <div className="flex-1 p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold">
-                  {currentStep === 1 && "Question & answers"}
-                  {currentStep === 2 && "Choose Template"}
-                  {currentStep === 3 && "Poll Placement"}
-                  {currentStep === 4 && "Schedule"}
-                  {currentStep === 5 && "Advanced Settings"}
-                  {currentStep === 6 && "Integration"}
-                  {currentStep === 7 && "Share or Embed Poll"}
-                </h2>
+              <DialogHeader className="mb-6 flex justify-between items-center">
+                <DialogTitle className="text-xl font-semibold">
+                  {getStepTitle()}
+                </DialogTitle>
                 <DialogClose className="rounded-full h-8 w-8 flex items-center justify-center hover:bg-gray-100">
                   <X className="h-4 w-4" />
                 </DialogClose>
-              </div>
+              </DialogHeader>
+              <DialogDescription className="sr-only">
+                Configure your poll settings
+              </DialogDescription>
 
               {getStepContent()}
 
