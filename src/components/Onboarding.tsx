@@ -10,15 +10,58 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { ChevronRight, ChevronLeft, Building, Package, Users, BarChart4, ClipboardCheck, X, PlusCircle } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Building, Package, Users, BarChart4, ClipboardCheck, X, PlusCircle, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 type OnboardingStepProps = {
   onNext: () => void;
   onBack?: () => void;
+  formData: FormData;
+  updateFormData: (data: Partial<FormData>) => void;
 };
 
-const CompanyInfoStep: React.FC<OnboardingStepProps> = ({ onNext }) => {
+type Competitor = {
+  name: string;
+  website: string;
+  strengths: string;
+  weaknesses: string;
+};
+
+type FormData = {
+  // Company Info
+  companyName: string;
+  industry: string;
+  businessType: string;
+  companySize: string;
+  yearFounded: string;
+  
+  // Product Info
+  productCategory: string;
+  productType: string;
+  targetMarket: string;
+  keyFeatures: string[];
+  productDescription: string;
+  
+  // Competitor Info
+  competitors: Competitor[];
+  
+  // Analysis Preferences
+  metricsToAnalyze: string[];
+  recommendationTypes: string[];
+  analysisFrequency: string;
+  additionalNotes: string;
+  
+  // Terms Agreement
+  termsAgreed: boolean;
+};
+
+const CompanyInfoStep: React.FC<OnboardingStepProps> = ({ onNext, formData, updateFormData }) => {
+  const handleCompanyChange = (field: keyof Pick<FormData, 'companyName' | 'industry' | 'businessType' | 'companySize' | 'yearFounded'>, value: string) => {
+    updateFormData({ [field]: value });
+  };
+  
+  const isNextDisabled = !formData.companyName || !formData.industry || !formData.businessType || !formData.companySize;
+  
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="space-y-2">
@@ -26,13 +69,16 @@ const CompanyInfoStep: React.FC<OnboardingStepProps> = ({ onNext }) => {
         <Input 
           id="company-name" 
           placeholder="Acme Inc." 
+          value={formData.companyName}
+          onChange={(e) => handleCompanyChange('companyName', e.target.value)}
           className="w-full rounded-md border border-gray-200 bg-white"
+          required
         />
       </div>
       
       <div className="space-y-2">
         <Label htmlFor="industry" className="text-sm font-medium">Industry</Label>
-        <Select>
+        <Select value={formData.industry} onValueChange={(value) => handleCompanyChange('industry', value)}>
           <SelectTrigger id="industry" className="w-full rounded-md border border-gray-200 bg-white">
             <SelectValue placeholder="Select your industry" />
           </SelectTrigger>
@@ -49,7 +95,7 @@ const CompanyInfoStep: React.FC<OnboardingStepProps> = ({ onNext }) => {
       
       <div className="space-y-2">
         <Label htmlFor="business-type" className="text-sm font-medium">Business Type</Label>
-        <Select>
+        <Select value={formData.businessType} onValueChange={(value) => handleCompanyChange('businessType', value)}>
           <SelectTrigger id="business-type" className="w-full rounded-md border border-gray-200 bg-white">
             <SelectValue placeholder="Select business type" />
           </SelectTrigger>
@@ -63,7 +109,7 @@ const CompanyInfoStep: React.FC<OnboardingStepProps> = ({ onNext }) => {
       
       <div className="space-y-2">
         <Label htmlFor="company-size" className="text-sm font-medium">Company Size</Label>
-        <Select>
+        <Select value={formData.companySize} onValueChange={(value) => handleCompanyChange('companySize', value)}>
           <SelectTrigger id="company-size" className="w-full rounded-md border border-gray-200 bg-white">
             <SelectValue placeholder="Select company size" />
           </SelectTrigger>
@@ -84,25 +130,42 @@ const CompanyInfoStep: React.FC<OnboardingStepProps> = ({ onNext }) => {
           id="founded" 
           type="number" 
           placeholder="2020" 
+          value={formData.yearFounded}
+          onChange={(e) => handleCompanyChange('yearFounded', e.target.value)}
           className="w-full rounded-md border border-gray-200 bg-white"
         />
       </div>
       
-      <Button onClick={onNext} className="w-full mt-8 bg-insight-600 hover:bg-insight-700 text-white">
+      <Button 
+        onClick={onNext} 
+        className="w-full mt-8 bg-insight-600 hover:bg-insight-700 text-white"
+        disabled={isNextDisabled}
+      >
         Continue <ChevronRight className="ml-2 h-4 w-4" />
       </Button>
     </div>
   );
 };
 
-const ProductInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
-  const [productType, setProductType] = useState<string>("");
+const ProductInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formData, updateFormData }) => {
+  const handleKeyFeatureToggle = (feature: string) => {
+    const current = formData.keyFeatures || [];
+    const updated = current.includes(feature)
+      ? current.filter(f => f !== feature)
+      : [...current, feature];
+    
+    updateFormData({ keyFeatures: updated });
+  };
+  
+  const isFeatureSelected = (feature: string) => (formData.keyFeatures || []).includes(feature);
+  
+  const isNextDisabled = !formData.productCategory || !formData.productType || !formData.targetMarket || (formData.keyFeatures || []).length === 0;
   
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="space-y-2">
         <Label htmlFor="product-category" className="text-sm font-medium">Product/Service Category</Label>
-        <Select>
+        <Select value={formData.productCategory} onValueChange={(value) => updateFormData({ productCategory: value })}>
           <SelectTrigger id="product-category" className="w-full rounded-md border border-gray-200 bg-white">
             <SelectValue placeholder="Select product category" />
           </SelectTrigger>
@@ -121,7 +184,11 @@ const ProductInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
       
       <div className="bg-gray-50 p-4 rounded-lg my-4">
         <Label className="text-sm font-medium mb-3 block">Product/Service Type</Label>
-        <RadioGroup defaultValue={productType} onValueChange={setProductType} className="space-y-3">
+        <RadioGroup 
+          value={formData.productType} 
+          onValueChange={(value) => updateFormData({ productType: value })} 
+          className="space-y-3"
+        >
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
             <RadioGroupItem value="physical" id="physical" />
             <Label htmlFor="physical" className="cursor-pointer">Physical Product</Label>
@@ -139,7 +206,7 @@ const ProductInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
       
       <div className="space-y-2">
         <Label htmlFor="target-market" className="text-sm font-medium">Target Market</Label>
-        <Select>
+        <Select value={formData.targetMarket} onValueChange={(value) => updateFormData({ targetMarket: value })}>
           <SelectTrigger id="target-market" className="w-full rounded-md border border-gray-200 bg-white">
             <SelectValue placeholder="Select target market" />
           </SelectTrigger>
@@ -156,27 +223,51 @@ const ProductInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
         <Label className="text-sm font-medium">Key Features</Label>
         <div className="bg-gray-50 p-4 rounded-lg grid grid-cols-2 gap-3">
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="feature1" />
+            <Checkbox 
+              id="feature1" 
+              checked={isFeatureSelected('User-friendly')}
+              onCheckedChange={() => handleKeyFeatureToggle('User-friendly')}
+            />
             <Label htmlFor="feature1" className="cursor-pointer">User-friendly</Label>
           </div>
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="feature2" />
+            <Checkbox 
+              id="feature2" 
+              checked={isFeatureSelected('Cost-effective')}
+              onCheckedChange={() => handleKeyFeatureToggle('Cost-effective')}
+            />
             <Label htmlFor="feature2" className="cursor-pointer">Cost-effective</Label>
           </div>
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="feature3" />
+            <Checkbox 
+              id="feature3" 
+              checked={isFeatureSelected('Innovative')}
+              onCheckedChange={() => handleKeyFeatureToggle('Innovative')}
+            />
             <Label htmlFor="feature3" className="cursor-pointer">Innovative</Label>
           </div>
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="feature4" />
+            <Checkbox 
+              id="feature4" 
+              checked={isFeatureSelected('Scalable')}
+              onCheckedChange={() => handleKeyFeatureToggle('Scalable')}
+            />
             <Label htmlFor="feature4" className="cursor-pointer">Scalable</Label>
           </div>
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="feature5" />
+            <Checkbox 
+              id="feature5" 
+              checked={isFeatureSelected('High quality')}
+              onCheckedChange={() => handleKeyFeatureToggle('High quality')}
+            />
             <Label htmlFor="feature5" className="cursor-pointer">High quality</Label>
           </div>
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="feature6" />
+            <Checkbox 
+              id="feature6" 
+              checked={isFeatureSelected('Eco-friendly')}
+              onCheckedChange={() => handleKeyFeatureToggle('Eco-friendly')}
+            />
             <Label htmlFor="feature6" className="cursor-pointer">Eco-friendly</Label>
           </div>
         </div>
@@ -187,6 +278,8 @@ const ProductInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
         <Textarea 
           id="product-description" 
           placeholder="Describe your product/service in detail..."
+          value={formData.productDescription}
+          onChange={(e) => updateFormData({ productDescription: e.target.value })}
           rows={4}
           className="w-full rounded-md border border-gray-200 bg-white resize-none"
         />
@@ -196,7 +289,11 @@ const ProductInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
         <Button variant="outline" onClick={onBack} className="border-gray-200">
           <ChevronLeft className="mr-2 h-4 w-4" /> Back
         </Button>
-        <Button onClick={onNext} className="bg-insight-600 hover:bg-insight-700 text-white">
+        <Button 
+          onClick={onNext} 
+          className="bg-insight-600 hover:bg-insight-700 text-white"
+          disabled={isNextDisabled}
+        >
           Continue <ChevronRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
@@ -204,26 +301,32 @@ const ProductInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
   );
 };
 
-const CompetitorInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
-  const [competitors, setCompetitors] = useState([{ name: '', website: '', strengths: '', weaknesses: '' }]);
-  
-  const addCompetitor = () => {
-    setCompetitors([...competitors, { name: '', website: '', strengths: '', weaknesses: '' }]);
+const CompetitorInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formData, updateFormData }) => {
+  const handleCompetitorChange = (index: number, field: keyof Competitor, value: string) => {
+    const updatedCompetitors = [...(formData.competitors || [])];
+    updatedCompetitors[index] = { 
+      ...updatedCompetitors[index], 
+      [field]: value 
+    };
+    updateFormData({ competitors: updatedCompetitors });
   };
   
-  const updateCompetitor = (index: number, field: string, value: string) => {
-    const newCompetitors = [...competitors];
-    newCompetitors[index] = { ...newCompetitors[index], [field]: value };
-    setCompetitors(newCompetitors);
+  const addCompetitor = () => {
+    const competitors = [...(formData.competitors || [])];
+    competitors.push({ name: '', website: '', strengths: '', weaknesses: '' });
+    updateFormData({ competitors: competitors });
   };
   
   const removeCompetitor = (index: number) => {
-    if (competitors.length > 1) {
-      const newCompetitors = [...competitors];
-      newCompetitors.splice(index, 1);
-      setCompetitors(newCompetitors);
+    if ((formData.competitors || []).length > 1) {
+      const updatedCompetitors = [...(formData.competitors || [])];
+      updatedCompetitors.splice(index, 1);
+      updateFormData({ competitors: updatedCompetitors });
     }
   };
+  
+  const isNextDisabled = !formData.competitors || formData.competitors.length === 0 || 
+    formData.competitors.some(c => !c.name || !c.website);
   
   return (
     <div className="space-y-6 animate-fade-in">
@@ -235,13 +338,13 @@ const CompetitorInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) =
           </Button>
         </div>
         
-        {competitors.map((competitor, index) => (
+        {(formData.competitors || []).map((competitor, index) => (
           <Card key={index} className="animate-scale-in border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <CardTitle className="text-md flex items-center">
                 Competitor {index + 1}
               </CardTitle>
-              {competitors.length > 1 && (
+              {(formData.competitors || []).length > 1 && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -260,9 +363,10 @@ const CompetitorInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) =
                   <Input 
                     id={`competitor-name-${index}`} 
                     value={competitor.name}
-                    onChange={(e) => updateCompetitor(index, 'name', e.target.value)}
+                    onChange={(e) => handleCompetitorChange(index, 'name', e.target.value)}
                     placeholder="Competitor Inc."
                     className="w-full rounded-md border border-gray-200 bg-white"
+                    required
                   />
                 </div>
                 
@@ -271,9 +375,10 @@ const CompetitorInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) =
                   <Input 
                     id={`competitor-website-${index}`} 
                     value={competitor.website}
-                    onChange={(e) => updateCompetitor(index, 'website', e.target.value)}
+                    onChange={(e) => handleCompetitorChange(index, 'website', e.target.value)}
                     placeholder="https://competitor.com"
                     className="w-full rounded-md border border-gray-200 bg-white"
+                    required
                   />
                 </div>
               </div>
@@ -283,7 +388,7 @@ const CompetitorInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) =
                 <Textarea 
                   id={`competitor-strengths-${index}`} 
                   value={competitor.strengths}
-                  onChange={(e) => updateCompetitor(index, 'strengths', e.target.value)}
+                  onChange={(e) => handleCompetitorChange(index, 'strengths', e.target.value)}
                   placeholder="What are they known for? What do they do well?"
                   rows={2}
                   className="w-full rounded-md border border-gray-200 bg-white resize-none"
@@ -295,7 +400,7 @@ const CompetitorInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) =
                 <Textarea 
                   id={`competitor-weaknesses-${index}`} 
                   value={competitor.weaknesses}
-                  onChange={(e) => updateCompetitor(index, 'weaknesses', e.target.value)}
+                  onChange={(e) => handleCompetitorChange(index, 'weaknesses', e.target.value)}
                   placeholder="Where do they fall short? What are their limitations?"
                   rows={2}
                   className="w-full rounded-md border border-gray-200 bg-white resize-none"
@@ -310,7 +415,11 @@ const CompetitorInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) =
         <Button variant="outline" onClick={onBack} className="border-gray-200">
           <ChevronLeft className="mr-2 h-4 w-4" /> Back
         </Button>
-        <Button onClick={onNext} className="bg-insight-600 hover:bg-insight-700 text-white">
+        <Button 
+          onClick={onNext} 
+          className="bg-insight-600 hover:bg-insight-700 text-white"
+          disabled={isNextDisabled}
+        >
           Continue <ChevronRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
@@ -318,30 +427,75 @@ const CompetitorInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) =
   );
 };
 
-const AnalysisPreferencesStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
+const AnalysisPreferencesStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formData, updateFormData }) => {
+  const handleMetricToggle = (metric: string) => {
+    const current = formData.metricsToAnalyze || [];
+    const updated = current.includes(metric)
+      ? current.filter(m => m !== metric)
+      : [...current, metric];
+    
+    updateFormData({ metricsToAnalyze: updated });
+  };
+  
+  const handleRecommendationToggle = (recommendation: string) => {
+    const current = formData.recommendationTypes || [];
+    const updated = current.includes(recommendation)
+      ? current.filter(r => r !== recommendation)
+      : [...current, recommendation];
+    
+    updateFormData({ recommendationTypes: updated });
+  };
+  
+  const isMetricSelected = (metric: string) => (formData.metricsToAnalyze || []).includes(metric);
+  const isRecommendationSelected = (recommendation: string) => (formData.recommendationTypes || []).includes(recommendation);
+  
+  const isNextDisabled = !formData.metricsToAnalyze || formData.metricsToAnalyze.length === 0 || 
+    !formData.recommendationTypes || formData.recommendationTypes.length === 0 || 
+    !formData.analysisFrequency;
+  
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="bg-gray-50 p-5 rounded-lg space-y-4">
         <Label className="text-sm font-medium">Metrics You Want to Analyze</Label>
         <div className="space-y-3">
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="metric1" />
+            <Checkbox 
+              id="metric1" 
+              checked={isMetricSelected('Revenue & Sales')}
+              onCheckedChange={() => handleMetricToggle('Revenue & Sales')}
+            />
             <Label htmlFor="metric1" className="cursor-pointer">Revenue & Sales</Label>
           </div>
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="metric2" />
+            <Checkbox 
+              id="metric2" 
+              checked={isMetricSelected('Market Trends')}
+              onCheckedChange={() => handleMetricToggle('Market Trends')}
+            />
             <Label htmlFor="metric2" className="cursor-pointer">Market Trends</Label>
           </div>
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="metric3" />
+            <Checkbox 
+              id="metric3" 
+              checked={isMetricSelected('Customer Feedback')}
+              onCheckedChange={() => handleMetricToggle('Customer Feedback')}
+            />
             <Label htmlFor="metric3" className="cursor-pointer">Customer Feedback</Label>
           </div>
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="metric4" />
+            <Checkbox 
+              id="metric4" 
+              checked={isMetricSelected('Product Performance')}
+              onCheckedChange={() => handleMetricToggle('Product Performance')}
+            />
             <Label htmlFor="metric4" className="cursor-pointer">Product Performance</Label>
           </div>
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="metric5" />
+            <Checkbox 
+              id="metric5" 
+              checked={isMetricSelected('Competitor Analysis')}
+              onCheckedChange={() => handleMetricToggle('Competitor Analysis')}
+            />
             <Label htmlFor="metric5" className="cursor-pointer">Competitor Analysis</Label>
           </div>
         </div>
@@ -351,23 +505,43 @@ const AnalysisPreferencesStep: React.FC<OnboardingStepProps> = ({ onNext, onBack
         <Label className="text-sm font-medium">Type of Recommendations</Label>
         <div className="space-y-3">
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="rec1" />
+            <Checkbox 
+              id="rec1" 
+              checked={isRecommendationSelected('Product Improvement')}
+              onCheckedChange={() => handleRecommendationToggle('Product Improvement')}
+            />
             <Label htmlFor="rec1" className="cursor-pointer">Product Improvement</Label>
           </div>
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="rec2" />
+            <Checkbox 
+              id="rec2" 
+              checked={isRecommendationSelected('Pricing Strategy')}
+              onCheckedChange={() => handleRecommendationToggle('Pricing Strategy')}
+            />
             <Label htmlFor="rec2" className="cursor-pointer">Pricing Strategy</Label>
           </div>
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="rec3" />
+            <Checkbox 
+              id="rec3" 
+              checked={isRecommendationSelected('Marketing Insights')}
+              onCheckedChange={() => handleRecommendationToggle('Marketing Insights')}
+            />
             <Label htmlFor="rec3" className="cursor-pointer">Marketing Insights</Label>
           </div>
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="rec4" />
+            <Checkbox 
+              id="rec4" 
+              checked={isRecommendationSelected('Operational Efficiency')}
+              onCheckedChange={() => handleRecommendationToggle('Operational Efficiency')}
+            />
             <Label htmlFor="rec4" className="cursor-pointer">Operational Efficiency</Label>
           </div>
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-            <Checkbox id="rec5" />
+            <Checkbox 
+              id="rec5" 
+              checked={isRecommendationSelected('Customer Experience')}
+              onCheckedChange={() => handleRecommendationToggle('Customer Experience')}
+            />
             <Label htmlFor="rec5" className="cursor-pointer">Customer Experience</Label>
           </div>
         </div>
@@ -375,7 +549,7 @@ const AnalysisPreferencesStep: React.FC<OnboardingStepProps> = ({ onNext, onBack
       
       <div className="space-y-2">
         <Label htmlFor="analysis-frequency" className="text-sm font-medium">Analysis Frequency</Label>
-        <Select>
+        <Select value={formData.analysisFrequency} onValueChange={(value) => updateFormData({ analysisFrequency: value })}>
           <SelectTrigger id="analysis-frequency" className="w-full rounded-md border border-gray-200 bg-white">
             <SelectValue placeholder="Select frequency" />
           </SelectTrigger>
@@ -393,6 +567,8 @@ const AnalysisPreferencesStep: React.FC<OnboardingStepProps> = ({ onNext, onBack
         <Textarea 
           id="additional-notes" 
           placeholder="Any specific areas you want our analysis to focus on..."
+          value={formData.additionalNotes}
+          onChange={(e) => updateFormData({ additionalNotes: e.target.value })}
           rows={3}
           className="w-full rounded-md border border-gray-200 bg-white resize-none"
         />
@@ -402,7 +578,11 @@ const AnalysisPreferencesStep: React.FC<OnboardingStepProps> = ({ onNext, onBack
         <Button variant="outline" onClick={onBack} className="border-gray-200">
           <ChevronLeft className="mr-2 h-4 w-4" /> Back
         </Button>
-        <Button onClick={onNext} className="bg-insight-600 hover:bg-insight-700 text-white">
+        <Button 
+          onClick={onNext} 
+          className="bg-insight-600 hover:bg-insight-700 text-white"
+          disabled={isNextDisabled}
+        >
           Continue <ChevronRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
@@ -410,7 +590,35 @@ const AnalysisPreferencesStep: React.FC<OnboardingStepProps> = ({ onNext, onBack
   );
 };
 
-const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
+const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formData, updateFormData }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    
+    try {
+      const response = await fetch('https://hridya.app.n8n.cloud/webhook-test/ddceb467-69ab-4408-9bdc-c411be121fc2', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      
+      if (response.ok) {
+        toast.success("Setup complete! Redirecting to dashboard...");
+        setTimeout(() => onNext(), 1500);
+      } else {
+        toast.error("There was an error submitting your data. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast.error("Connection error. Please check your internet connection and try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="rounded-md bg-blue-50 p-5 text-blue-800">
@@ -429,10 +637,13 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => 
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm">
-            <p><span className="font-medium">Company:</span> Acme Inc.</p>
-            <p><span className="font-medium">Industry:</span> Technology</p>
-            <p><span className="font-medium">Business Type:</span> SME</p>
-            <p><span className="font-medium">Size:</span> 11-50 employees</p>
+            <p><span className="font-medium">Company:</span> {formData.companyName}</p>
+            <p><span className="font-medium">Industry:</span> {formData.industry}</p>
+            <p><span className="font-medium">Business Type:</span> {formData.businessType}</p>
+            <p><span className="font-medium">Size:</span> {formData.companySize}</p>
+            {formData.yearFounded && (
+              <p><span className="font-medium">Founded:</span> {formData.yearFounded}</p>
+            )}
           </CardContent>
         </Card>
         
@@ -443,10 +654,16 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => 
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm">
-            <p><span className="font-medium">Category:</span> Software</p>
-            <p><span className="font-medium">Type:</span> Digital Product</p>
-            <p><span className="font-medium">Target Market:</span> B2B</p>
-            <p><span className="font-medium">Key Features:</span> User-friendly, Scalable, Innovative</p>
+            <p><span className="font-medium">Category:</span> {formData.productCategory}</p>
+            <p><span className="font-medium">Type:</span> {formData.productType}</p>
+            <p><span className="font-medium">Target Market:</span> {formData.targetMarket}</p>
+            <p><span className="font-medium">Key Features:</span> {(formData.keyFeatures || []).join(', ')}</p>
+            {formData.productDescription && (
+              <div>
+                <span className="font-medium">Description:</span>
+                <p className="mt-1 text-gray-600">{formData.productDescription}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
         
@@ -456,8 +673,24 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => 
               <Users className="mr-2 h-4 w-4" /> Competitor Information
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm">
-            <p><span className="font-medium">Main Competitors:</span> Competitor Inc., IndustryLeader LLC</p>
+          <CardContent className="text-sm space-y-3">
+            <p><span className="font-medium">Main Competitors:</span> {(formData.competitors || []).map(c => c.name).join(', ')}</p>
+            {(formData.competitors || []).length > 0 && (
+              <div className="mt-2 space-y-2">
+                {(formData.competitors || []).map((competitor, index) => (
+                  <div key={index} className="p-2 bg-gray-50 rounded">
+                    <p className="font-medium">{competitor.name}</p>
+                    <p className="text-xs text-blue-600">{competitor.website}</p>
+                    {competitor.strengths && (
+                      <p className="mt-1 text-xs"><span className="font-medium">Strengths:</span> {competitor.strengths}</p>
+                    )}
+                    {competitor.weaknesses && (
+                      <p className="text-xs"><span className="font-medium">Weaknesses:</span> {competitor.weaknesses}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
         
@@ -468,26 +701,48 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => 
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm">
-            <p><span className="font-medium">Metrics:</span> Revenue & Sales, Market Trends, Customer Feedback</p>
-            <p><span className="font-medium">Recommendations:</span> Product Improvement, Marketing Insights</p>
-            <p><span className="font-medium">Frequency:</span> Weekly</p>
+            <p><span className="font-medium">Metrics:</span> {(formData.metricsToAnalyze || []).join(', ')}</p>
+            <p><span className="font-medium">Recommendations:</span> {(formData.recommendationTypes || []).join(', ')}</p>
+            <p><span className="font-medium">Frequency:</span> {formData.analysisFrequency}</p>
+            {formData.additionalNotes && (
+              <div className="mt-2">
+                <span className="font-medium">Additional Notes:</span>
+                <p className="mt-1 text-gray-600">{formData.additionalNotes}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
       
       <div className="flex items-center space-x-2 mt-6 p-3 bg-gray-50 rounded-md">
-        <Checkbox id="terms" />
+        <Checkbox 
+          id="terms" 
+          checked={formData.termsAgreed}
+          onCheckedChange={(checked) => updateFormData({ termsAgreed: checked as boolean })}
+        />
         <Label htmlFor="terms" className="text-sm">
           I agree to the Terms of Service and Privacy Policy
         </Label>
       </div>
       
       <div className="flex justify-between mt-8">
-        <Button variant="outline" onClick={onBack} className="border-gray-200">
+        <Button variant="outline" onClick={onBack} className="border-gray-200" disabled={isSubmitting}>
           <ChevronLeft className="mr-2 h-4 w-4" /> Back
         </Button>
-        <Button onClick={onNext} className="bg-green-600 hover:bg-green-700 text-white">
-          Submit <ClipboardCheck className="ml-2 h-4 w-4" />
+        <Button 
+          onClick={handleSubmit} 
+          className="bg-green-600 hover:bg-green-700 text-white"
+          disabled={isSubmitting || !formData.termsAgreed}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...
+            </>
+          ) : (
+            <>
+              Submit <ClipboardCheck className="ml-2 h-4 w-4" />
+            </>
+          )}
         </Button>
       </div>
     </div>
@@ -498,12 +753,43 @@ export const Onboarding: React.FC = () => {
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
   
+  const [formData, setFormData] = useState<FormData>({
+    // Company Info
+    companyName: '',
+    industry: '',
+    businessType: '',
+    companySize: '',
+    yearFounded: '',
+    
+    // Product Info
+    productCategory: '',
+    productType: '',
+    targetMarket: '',
+    keyFeatures: [],
+    productDescription: '',
+    
+    // Competitor Info
+    competitors: [{ name: '', website: '', strengths: '', weaknesses: '' }],
+    
+    // Analysis Preferences
+    metricsToAnalyze: [],
+    recommendationTypes: [],
+    analysisFrequency: '',
+    additionalNotes: '',
+    
+    // Terms Agreement
+    termsAgreed: false
+  });
+  
+  const updateFormData = (data: Partial<FormData>) => {
+    setFormData(prev => ({ ...prev, ...data }));
+  };
+  
   const handleNext = () => {
     if (step < 5) {
       setStep(step + 1);
     } else {
-      toast.success("Setup complete! Redirecting to dashboard...");
-      setTimeout(() => navigate('/dashboard'), 1500);
+      navigate('/dashboard');
     }
   };
   
@@ -574,11 +860,11 @@ export const Onboarding: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            {step === 1 && <CompanyInfoStep onNext={handleNext} />}
-            {step === 2 && <ProductInfoStep onNext={handleNext} onBack={handleBack} />}
-            {step === 3 && <CompetitorInfoStep onNext={handleNext} onBack={handleBack} />}
-            {step === 4 && <AnalysisPreferencesStep onNext={handleNext} onBack={handleBack} />}
-            {step === 5 && <ReviewSubmitStep onNext={handleNext} onBack={handleBack} />}
+            {step === 1 && <CompanyInfoStep onNext={handleNext} formData={formData} updateFormData={updateFormData} />}
+            {step === 2 && <ProductInfoStep onNext={handleNext} onBack={handleBack} formData={formData} updateFormData={updateFormData} />}
+            {step === 3 && <CompetitorInfoStep onNext={handleNext} onBack={handleBack} formData={formData} updateFormData={updateFormData} />}
+            {step === 4 && <AnalysisPreferencesStep onNext={handleNext} onBack={handleBack} formData={formData} updateFormData={updateFormData} />}
+            {step === 5 && <ReviewSubmitStep onNext={handleNext} onBack={handleBack} formData={formData} updateFormData={updateFormData} />}
           </CardContent>
         </Card>
       </div>
