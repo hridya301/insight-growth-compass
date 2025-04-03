@@ -6,8 +6,8 @@ import { Goals } from '@/components/Goals';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
-import clientPromise from '@/config/db';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 // Create a query client
 const queryClient = new QueryClient({
@@ -28,15 +28,27 @@ const GoalsPage = () => {
   useEffect(() => {
     async function checkConnection() {
       try {
-        // In a browser environment, we can't really ping MongoDB directly
-        // So we'll mock a successful connection for demonstration
-        setIsConnected(true);
-        toast({
-          title: "Database connected",
-          description: "Successfully connected to database (mock in browser environment).",
-        });
+        // Ping Supabase to check connectivity
+        const { data, error } = await supabase.from('goals').select('count').limit(1);
+        
+        if (error) {
+          console.error("Supabase connection error:", error);
+          setIsConnected(false);
+          toast({
+            title: "Connection failed",
+            description: "Could not connect to Supabase. Check your environment setup.",
+            variant: "destructive",
+          });
+        } else {
+          setIsConnected(true);
+          toast({
+            title: "Database connected",
+            description: "Successfully connected to Supabase database.",
+          });
+        }
       } catch (error) {
         console.error("Failed to connect to database", error);
+        setIsConnected(false);
         toast({
           title: "Connection failed",
           description: "Could not connect to database. Check your environment setup.",
@@ -71,9 +83,6 @@ const GoalsPage = () => {
                     <p>Could not connect to database. Please check your configuration.</p>
                   </div>
                 )}
-                <div className="p-4 mb-4 text-sm text-blue-800 bg-blue-100 rounded-lg dark:bg-blue-800/30 dark:text-blue-300">
-                  <p>Running with mock database in browser environment. For a real database connection, you would need a server-side solution.</p>
-                </div>
                 <Goals />
               </>
             )}

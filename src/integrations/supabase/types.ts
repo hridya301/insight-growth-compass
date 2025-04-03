@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      attribute_comparisons: {
+        Row: {
+          attribute: string
+          category: string | null
+          competitors: Json
+          created_at: string
+          id: string
+          updated_at: string
+          your_product: number
+        }
+        Insert: {
+          attribute: string
+          category?: string | null
+          competitors: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+          your_product: number
+        }
+        Update: {
+          attribute?: string
+          category?: string | null
+          competitors?: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+          your_product?: number
+        }
+        Relationships: []
+      }
       competitors: {
         Row: {
           created_at: string | null
@@ -66,6 +96,75 @@ export type Database = {
           threat?: string | null
           updated_at?: string | null
           weaknesses?: string[] | null
+        }
+        Relationships: []
+      }
+      feature_comparisons: {
+        Row: {
+          category: string | null
+          competitors: Json
+          created_at: string
+          feature: string
+          id: string
+          updated_at: string
+          your_product: boolean
+        }
+        Insert: {
+          category?: string | null
+          competitors: Json
+          created_at?: string
+          feature: string
+          id?: string
+          updated_at?: string
+          your_product: boolean
+        }
+        Update: {
+          category?: string | null
+          competitors?: Json
+          created_at?: string
+          feature?: string
+          id?: string
+          updated_at?: string
+          your_product?: boolean
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          due_date: string
+          id: string
+          priority: string
+          progress: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          due_date: string
+          id?: string
+          priority: string
+          progress?: number
+          status: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          due_date?: string
+          id?: string
+          priority?: string
+          progress?: number
+          status?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
