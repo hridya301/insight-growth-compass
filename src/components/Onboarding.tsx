@@ -602,11 +602,13 @@ const AnalysisPreferencesStep: React.FC<OnboardingStepProps> = ({ onNext, onBack
 
 const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({ onNext, onBack, formData, updateFormData, setWebhookResponse, setWebhookError }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localWebhookError, setLocalWebhookError] = useState<string | null>(null);
   
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setWebhookResponse(null);
     setWebhookError(null);
+    setLocalWebhookError(null);
     
     try {
       const response = await fetch('https://hridya.app.n8n.cloud/webhook-test/a26abbb7-25d4-4a7e-8d18-d3e97d82cee8', {
@@ -630,11 +632,13 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({ onNext, onBack, for
       } else {
         const errorMessage = `Error: ${response.status} ${response.statusText}`;
         setWebhookError(errorMessage);
+        setLocalWebhookError(errorMessage);
         toast.error("There was an error submitting your data. Please try again.");
       }
     } catch (error) {
       const errorMessage = `Error: ${error instanceof Error ? error.message : String(error)}`;
       setWebhookError(errorMessage);
+      setLocalWebhookError(errorMessage);
       console.error("Error submitting form:", error);
       toast.error("Connection error. Please check your internet connection and try again.");
     } finally {
@@ -769,11 +773,11 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({ onNext, onBack, for
         </Button>
       </div>
       
-      {webhookError && (
+      {localWebhookError && (
         <Alert variant="destructive" className="mt-4">
           <AlertTitle>Submission Error</AlertTitle>
           <AlertDescription>
-            {webhookError}
+            {localWebhookError}
           </AlertDescription>
         </Alert>
       )}
