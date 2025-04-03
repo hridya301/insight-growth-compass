@@ -1,52 +1,38 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, UserPlus } from 'lucide-react';
+import { SupabaseConnectionTest } from '@/components/SupabaseConnectionTest';
 
 const Index = () => {
-  const navigate = useNavigate();
-
-  const navigationOptions = [
-    { title: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard className="mr-2 h-5 w-5" /> },
-    { title: 'Complete Onboarding', path: '/onboarding', icon: <UserPlus className="mr-2 h-5 w-5" /> }
-  ];
-
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 md:p-8 flex items-center justify-center">
-      <Card className="w-full max-w-4xl mx-auto">
-        <CardHeader>
-          <CardTitle className="text-xl sm:text-2xl font-bold text-center text-insight-600">
-            Welcome to <span className="text-indigo-600">InsightGrowth</span>
-          </CardTitle>
-          <CardDescription className="text-center">
-            Navigate to any section of the application
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-            {navigationOptions.map((option) => (
-              <Button 
-                key={option.path}
-                onClick={() => navigate(option.path)} 
-                className="flex items-center justify-center h-14 sm:h-16 text-sm sm:text-md"
-                variant={option.path === '/onboarding' ? 'default' : 'outline'}
-              >
-                {option.icon}
-                {option.title}
-              </Button>
-            ))}
-          </div>
-          
-          <div className="mt-8 sm:mt-12 text-center text-gray-500 text-xs sm:text-sm">
-            <p>
-              InsightGrowth helps you analyze your business data and compare with competitors
-              to provide valuable insights for growth.
+    <div className="flex flex-col min-h-screen">
+      <main className="flex-grow flex flex-col items-center justify-center p-6">
+        <div className="max-w-3xl w-full space-y-8">
+          <div className="text-center">
+            <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-4">
+              Welcome to Digital Dreamers
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-400">
+              Your business intelligence platform powered by Supabase
             </p>
           </div>
-        </CardContent>
-      </Card>
+          
+          <SupabaseConnectionTest />
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+            <Button asChild size="lg">
+              <Link to="/dashboard">Go to Dashboard</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link to="/onboarding">Start Onboarding</Link>
+            </Button>
+          </div>
+        </div>
+      </main>
+      <footer className="py-6 text-center text-gray-500 dark:text-gray-400">
+        <p>© 2025 Digital Dreamers. All rights reserved.</p>
+      </footer>
     </div>
   );
 };
