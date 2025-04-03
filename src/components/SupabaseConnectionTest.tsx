@@ -13,13 +13,18 @@ export const SupabaseConnectionTest: React.FC = () => {
     setErrorMessage(null);
     
     try {
-      // We'll use the health check endpoint to verify connectivity
-      const { error } = await supabase.from('_pgrst_reserved_dummy').select('*').limit(1);
+      // Use a simple ping method by checking if we get a response
+      const { data, error } = await supabase.auth.getSession();
       
-      // The query will fail with a 404 because this reserved table doesn't exist
-      // but that's fine - it means we connected to Supabase successfully
-      console.log('Supabase connection successful');
-      setConnectionStatus('success');
+      if (error) {
+        console.error('Supabase connection error:', error);
+        setConnectionStatus('error');
+        setErrorMessage(error.message);
+      } else {
+        // We successfully connected to Supabase
+        console.log('Supabase connection successful');
+        setConnectionStatus('success');
+      }
     } catch (error) {
       console.error('Unexpected error:', error);
       setConnectionStatus('error');
