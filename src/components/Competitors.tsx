@@ -39,6 +39,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Sample competitor data
 const competitorData = [
@@ -209,9 +219,11 @@ const marketTrendsData = [
 
 type CompetitorCardProps = {
   competitor: typeof competitorData[0];
+  onEdit: (competitor: typeof competitorData[0]) => void;
+  onDelete: (competitorId: number) => void;
 };
 
-const CompetitorCard: React.FC<CompetitorCardProps> = ({ competitor }) => {
+const CompetitorCard: React.FC<CompetitorCardProps> = ({ competitor, onEdit, onDelete }) => {
   const [expanded, setExpanded] = useState(false);
   
   const getThreatBadge = (threat: string) => {
@@ -306,10 +318,10 @@ const CompetitorCard: React.FC<CompetitorCardProps> = ({ competitor }) => {
           {expanded ? 'Show Less' : 'Show More'}
         </Button>
         <div className="flex space-x-1">
-          <Button variant="outline" size="icon" className="h-8 w-8">
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onEdit(competitor)}>
             <Edit className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" className="h-8 w-8 text-destructive">
+          <Button variant="outline" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(competitor.id)}>
             <Trash className="h-4 w-4" />
           </Button>
         </div>
@@ -321,6 +333,10 @@ const CompetitorCard: React.FC<CompetitorCardProps> = ({ competitor }) => {
 export const Competitors: React.FC = () => {
   const [competitors, setCompetitors] = useState(competitorData);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingCompetitorId, setEditingCompetitorId] = useState<number | null>(null);
+  const [competitorToDeleteId, setCompetitorToDeleteId] = useState<number | null>(null);
   const { toast } = useToast();
   
   // New competitor form state
@@ -382,9 +398,50 @@ export const Competitors: React.FC = () => {
       pricePoint: 'Standard',
       threat: 'medium',
     });
+    setIsEditing(false);
+    setEditingCompetitorId(null);
   };
 
-  const handleAddCompetitor = () => {
+  const handleEditCompetitor = (competitor: typeof competitorData[0]) => {
+    setIsEditing(true);
+    setEditingCompetitorId(competitor.id);
+    setNewCompetitor({
+      name: competitor.name,
+      logo: competitor.logo,
+      description: competitor.description,
+      founded: competitor.founded,
+      employees: competitor.employees,
+      funding: competitor.funding,
+      locations: competitor.locations.join(', '),
+      strengths: competitor.strengths.join('\n'),
+      weaknesses: competitor.weaknesses.join('\n'),
+      marketShare: competitor.marketShare,
+      growthRate: competitor.growthRate,
+      customerSatisfaction: competitor.customerSatisfaction,
+      pricePoint: competitor.pricePoint,
+      threat: competitor.threat,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDeleteCompetitor = (competitorId: number) => {
+    setCompetitorToDeleteId(competitorId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteCompetitor = () => {
+    if (competitorToDeleteId) {
+      setCompetitors(competitors.filter(comp => comp.id !== competitorToDeleteId));
+      toast({
+        title: "Competitor deleted",
+        description: "The competitor has been successfully removed.",
+      });
+      setDeleteDialogOpen(false);
+      setCompetitorToDeleteId(null);
+    }
+  };
+
+  const handleSaveCompetitor = () => {
     if (!newCompetitor.name) {
       toast({
         title: "Error",
@@ -394,8 +451,8 @@ export const Competitors: React.FC = () => {
       return;
     }
 
-    const newCompetitorEntry = {
-      id: competitors.length + 1,
+    const competitorEntry = {
+      id: isEditing && editingCompetitorId ? editingCompetitorId : competitors.length + 1,
       name: newCompetitor.name,
       logo: newCompetitor.logo,
       description: newCompetitor.description,
@@ -412,15 +469,31 @@ export const Competitors: React.FC = () => {
       threat: newCompetitor.threat,
     };
 
-    setCompetitors([...competitors, newCompetitorEntry]);
+    if (isEditing && editingCompetitorId) {
+      setCompetitors(
+        competitors.map(comp => comp.id === editingCompetitorId ? competitorEntry : comp)
+      );
+      toast({
+        title: "Success",
+        description: `${newCompetitor.name} has been updated successfully.`,
+      });
+    } else {
+      setCompetitors([...competitors, competitorEntry]);
+      toast({
+        title: "Success",
+        description: `${newCompetitor.name} has been added to your competitors list.`,
+      });
+    }
+
     setDialogOpen(false);
     resetForm();
-    
-    toast({
-      title: "Success",
-      description: `${newCompetitor.name} has been added to your competitors list.`,
-    });
   };
+
+  const dialogTitle = isEditing ? "Edit Competitor" : "Add New Competitor";
+  const dialogDescription = isEditing 
+    ? "Update the information about this competitor. Fields marked with * are required."
+    : "Enter the information about your new competitor. Fields marked with * are required.";
+  const buttonText = isEditing ? "Save Changes" : "Add Competitor";
 
   return (
     <div className="p-6 w-full space-y-6">
@@ -431,7 +504,10 @@ export const Competitors: React.FC = () => {
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh Data
           </Button>
-          <Button onClick={() => setDialogOpen(true)}>
+          <Button onClick={() => {
+            resetForm();
+            setDialogOpen(true);
+          }}>
             <Plus className="h-4 w-4 mr-2" />
             Add Competitor
           </Button>
@@ -440,7 +516,12 @@ export const Competitors: React.FC = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         {competitors.map((competitor) => (
-          <CompetitorCard key={competitor.id} competitor={competitor} />
+          <CompetitorCard 
+            key={competitor.id} 
+            competitor={competitor} 
+            onEdit={handleEditCompetitor}
+            onDelete={handleDeleteCompetitor}
+          />
         ))}
       </div>
       
@@ -644,13 +725,16 @@ export const Competitors: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Add Competitor Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* Edit/Add Competitor Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        if (!open) resetForm();
+        setDialogOpen(open);
+      }}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Add New Competitor</DialogTitle>
+            <DialogTitle>{dialogTitle}</DialogTitle>
             <DialogDescription>
-              Enter the information about your new competitor. Fields marked with * are required.
+              {dialogDescription}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
@@ -697,6 +781,7 @@ export const Competitors: React.FC = () => {
                 <Select 
                   onValueChange={(value) => handleSelectChange('employees', value)} 
                   defaultValue={newCompetitor.employees}
+                  value={newCompetitor.employees}
                 >
                   <SelectTrigger id="employees">
                     <SelectValue placeholder="Select size" />
@@ -801,6 +886,7 @@ export const Competitors: React.FC = () => {
                 <Select 
                   onValueChange={(value) => handleSelectChange('pricePoint', value)} 
                   defaultValue={newCompetitor.pricePoint}
+                  value={newCompetitor.pricePoint}
                 >
                   <SelectTrigger id="pricePoint">
                     <SelectValue placeholder="Select price point" />
@@ -819,6 +905,7 @@ export const Competitors: React.FC = () => {
                 <Select 
                   onValueChange={(value) => handleSelectChange('threat', value)} 
                   defaultValue={newCompetitor.threat}
+                  value={newCompetitor.threat}
                 >
                   <SelectTrigger id="threat">
                     <SelectValue placeholder="Select threat level" />
@@ -833,11 +920,42 @@ export const Competitors: React.FC = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddCompetitor}>Add Competitor</Button>
+            <Button variant="outline" onClick={() => {
+              resetForm();
+              setDialogOpen(false);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveCompetitor}>
+              {buttonText}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              competitor and remove all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteCompetitor}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
