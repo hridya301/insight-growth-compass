@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -12,6 +13,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/hooks/use-toast';
+
+// Goal interface for better type safety
+interface Goal {
+  id: number;
+  title: string;
+  description: string;
+  progress: number;
+  dueDate: string;
+  status: string;
+  priority: string;
+}
 
 // Sample data for goals
 const quarterlyGoals = [
@@ -85,18 +97,48 @@ const goalSchema = z.object({
   category: z.enum(["Quarterly", "Annual"])
 });
 
+// Schema for updating progress
+const progressUpdateSchema = z.object({
+  progress: z.number().min(0).max(100),
+  status: z.enum(["Completed", "On Track", "In Progress", "Early Stage", "At Risk", "Overdue"]),
+  notes: z.string().optional()
+});
+
 type GoalFormValues = z.infer<typeof goalSchema>;
+type ProgressUpdateValues = z.infer<typeof progressUpdateSchema>;
 
 const GoalCard: React.FC<{
-  title: string;
-  description: string;
-  progress: number;
-  dueDate: string;
-  status: string;
-  priority: string;
-}> = ({ title, description, progress, dueDate, status, priority }) => {
-  const date = new Date(dueDate);
+  goal: Goal;
+  onUpdateProgress: (goalId: number, data: Partial<Goal>) => void;
+}> = ({ goal, onUpdateProgress }) => {
+  const date = new Date(goal.dueDate);
   const formattedDate = `${date.toLocaleString('default', { month: 'short' })} ${date.getDate()}, ${date.getFullYear()}`;
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const { toast } = useToast();
+  
+  const progressForm = useForm<ProgressUpdateValues>({
+    resolver: zodResolver(progressUpdateSchema),
+    defaultValues: {
+      progress: goal.progress,
+      status: goal.status as any,
+      notes: ''
+    }
+  });
+
+  const handleProgressUpdate = (data: ProgressUpdateValues) => {
+    onUpdateProgress(goal.id, {
+      progress: data.progress,
+      status: data.status
+    });
+    
+    toast({
+      title: "Progress Updated",
+      description: `Updated progress for '${goal.title}' to ${data.progress}%`
+    });
+    
+    setUpdateDialogOpen(false);
+  };
   
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
@@ -124,26 +166,26 @@ const GoalCard: React.FC<{
     <Card className="card-hover">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-bold">{title}</CardTitle>
+          <CardTitle className="text-lg font-bold">{goal.title}</CardTitle>
           <div className="flex space-x-2">
-            <Badge variant="outline" className={getPriorityColor(priority)}>
-              {priority}
+            <Badge variant="outline" className={getPriorityColor(goal.priority)}>
+              {goal.priority}
             </Badge>
-            <Badge variant="outline" className={getStatusColor(status)}>
-              {status}
+            <Badge variant="outline" className={getStatusColor(goal.status)}>
+              {goal.status}
             </Badge>
           </div>
         </div>
-        <CardDescription>{description}</CardDescription>
+        <CardDescription>{goal.description}</CardDescription>
       </CardHeader>
       <CardContent className="pb-2">
         <div className="space-y-4">
           <div>
             <div className="flex justify-between text-sm mb-1">
               <span>Progress</span>
-              <span>{progress}%</span>
+              <span>{goal.progress}%</span>
             </div>
-            <Progress value={progress} className="h-2" />
+            <Progress value={goal.progress} className="h-2" />
           </div>
           <div className="flex items-center text-sm text-muted-foreground">
             <Calendar size={14} className="mr-2" />
@@ -153,8 +195,181 @@ const GoalCard: React.FC<{
       </CardContent>
       <CardFooter>
         <div className="flex space-x-2">
-          <Button variant="outline" size="sm" className="text-xs">Update Progress</Button>
-          <Button variant="outline" size="sm" className="text-xs">View Details</Button>
+          <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="text-xs">Update Progress</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Update Progress</DialogTitle>
+                <DialogDescription>
+                  Update the progress and status for "{goal.title}"
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...progressForm}>
+                <form onSubmit={progressForm.handleSubmit(handleProgressUpdate)} className="space-y-4">
+                  <FormField
+                    control={progressForm.control}
+                    name="progress"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Progress (%)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="0" 
+                            max="100" 
+                            {...field}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={progressForm.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <FormControl>
+                          <select
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            {...field}
+                          >
+                            <option value="Completed">Completed</option>
+                            <option value="On Track">On Track</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Early Stage">Early Stage</option>
+                            <option value="At Risk">At Risk</option>
+                            <option value="Overdue">Overdue</option>
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={progressForm.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Notes (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Add any notes about this progress update"
+                            className="min-h-[80px]" 
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          These notes will be visible in the goal history
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <DialogFooter>
+                    <Button type="submit">Save Changes</Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="text-xs">View Details</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[550px]">
+              <DialogHeader>
+                <div className="flex justify-between items-center">
+                  <DialogTitle className="text-xl">{goal.title}</DialogTitle>
+                  <div className="flex space-x-2">
+                    <Badge variant="outline" className={getPriorityColor(goal.priority)}>
+                      {goal.priority}
+                    </Badge>
+                    <Badge variant="outline" className={getStatusColor(goal.status)}>
+                      {goal.status}
+                    </Badge>
+                  </div>
+                </div>
+                <DialogDescription>
+                  Goal details and tracking information
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-6 py-4">
+                <div>
+                  <h3 className="text-sm font-medium">Description</h3>
+                  <p className="text-sm mt-1">{goal.description}</p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Progress</h3>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Current Progress</span>
+                    <span>{goal.progress}%</span>
+                  </div>
+                  <Progress value={goal.progress} className="h-2.5" />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-sm font-medium">Due Date</h3>
+                    <p className="text-sm mt-1">{formattedDate}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium">ID</h3>
+                    <p className="text-sm mt-1">GOAL-{goal.id.toString().padStart(4, '0')}</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium">Timeline</h3>
+                  <div className="mt-2 space-y-2">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 h-4 w-4 rounded-full bg-blue-500 mt-1 mr-2"></div>
+                      <div>
+                        <p className="text-sm font-medium">Goal Created</p>
+                        <p className="text-xs text-muted-foreground">Jan 15, 2025</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 h-4 w-4 rounded-full bg-green-500 mt-1 mr-2"></div>
+                      <div>
+                        <p className="text-sm font-medium">Initial Progress (25%)</p>
+                        <p className="text-xs text-muted-foreground">Feb 10, 2025</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 h-4 w-4 rounded-full bg-green-500 mt-1 mr-2"></div>
+                      <div>
+                        <p className="text-sm font-medium">Progress Update ({goal.progress}%)</p>
+                        <p className="text-xs text-muted-foreground">Today</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setDetailsDialogOpen(false);
+                    setUpdateDialogOpen(true);
+                  }}
+                >
+                  Update Progress
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </CardFooter>
     </Card>
@@ -162,8 +377,8 @@ const GoalCard: React.FC<{
 };
 
 export const Goals: React.FC = () => {
-  const [quarterlyList, setQuarterlyList] = useState(quarterlyGoals);
-  const [annualList, setAnnualList] = useState(annualGoals);
+  const [quarterlyList, setQuarterlyList] = useState<Goal[]>(quarterlyGoals);
+  const [annualList, setAnnualList] = useState<Goal[]>(annualGoals);
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -202,6 +417,19 @@ export const Goals: React.FC = () => {
 
     setDialogOpen(false);
     form.reset();
+  };
+
+  // Function to update a specific goal's progress
+  const handleUpdateGoal = (goalId: number, updatedData: Partial<Goal>, isQuarterly: boolean) => {
+    if (isQuarterly) {
+      setQuarterlyList(quarterlyList.map(goal => 
+        goal.id === goalId ? { ...goal, ...updatedData } : goal
+      ));
+    } else {
+      setAnnualList(annualList.map(goal => 
+        goal.id === goalId ? { ...goal, ...updatedData } : goal
+      ));
+    }
   };
 
   return (
@@ -353,19 +581,41 @@ export const Goals: React.FC = () => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Quarterly Goals</span>
-                <span className="text-sm font-medium">4 Active</span>
+                <span className="text-sm font-medium">{quarterlyList.length} Active</span>
               </div>
-              <Progress value={57} className="h-2" />
-              <div className="text-xs text-muted-foreground">57% average completion</div>
+              <Progress 
+                value={
+                  quarterlyList.length > 0
+                    ? quarterlyList.reduce((sum, goal) => sum + goal.progress, 0) / quarterlyList.length
+                    : 0
+                } 
+                className="h-2" 
+              />
+              <div className="text-xs text-muted-foreground">
+                {quarterlyList.length > 0
+                  ? Math.round(quarterlyList.reduce((sum, goal) => sum + goal.progress, 0) / quarterlyList.length)
+                  : 0}% average completion
+              </div>
             </div>
             
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Annual Goals</span>
-                <span className="text-sm font-medium">2 Active</span>
+                <span className="text-sm font-medium">{annualList.length} Active</span>
               </div>
-              <Progress value={28} className="h-2" />
-              <div className="text-xs text-muted-foreground">28% average completion</div>
+              <Progress 
+                value={
+                  annualList.length > 0
+                    ? annualList.reduce((sum, goal) => sum + goal.progress, 0) / annualList.length
+                    : 0
+                } 
+                className="h-2" 
+              />
+              <div className="text-xs text-muted-foreground">
+                {annualList.length > 0
+                  ? Math.round(annualList.reduce((sum, goal) => sum + goal.progress, 0) / annualList.length)
+                  : 0}% average completion
+              </div>
             </div>
             
             <div className="pt-4 space-y-2">
@@ -376,14 +626,15 @@ export const Goals: React.FC = () => {
                 </div>
               </div>
               <div className="text-sm">
-                <div className="flex justify-between py-1">
-                  <span>Launch New Product Feature</span>
-                  <span className="font-medium">80%</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span>Increase Market Share</span>
-                  <span className="font-medium">65%</span>
-                </div>
+                {[...quarterlyList, ...annualList]
+                  .sort((a, b) => b.progress - a.progress)
+                  .slice(0, 2)
+                  .map((goal) => (
+                    <div key={`top-${goal.id}`} className="flex justify-between py-1">
+                      <span>{goal.title}</span>
+                      <span className="font-medium">{goal.progress}%</span>
+                    </div>
+                  ))}
               </div>
             </div>
           </CardContent>
@@ -408,12 +659,8 @@ export const Goals: React.FC = () => {
               {quarterlyList.map((goal) => (
                 <GoalCard
                   key={goal.id}
-                  title={goal.title}
-                  description={goal.description}
-                  progress={goal.progress}
-                  dueDate={goal.dueDate}
-                  status={goal.status}
-                  priority={goal.priority}
+                  goal={goal}
+                  onUpdateProgress={(goalId, data) => handleUpdateGoal(goalId, data, true)}
                 />
               ))}
             </div>
@@ -431,12 +678,8 @@ export const Goals: React.FC = () => {
               {annualList.map((goal) => (
                 <GoalCard
                   key={goal.id}
-                  title={goal.title}
-                  description={goal.description}
-                  progress={goal.progress}
-                  dueDate={goal.dueDate}
-                  status={goal.status}
-                  priority={goal.priority}
+                  goal={goal}
+                  onUpdateProgress={(goalId, data) => handleUpdateGoal(goalId, data, false)}
                 />
               ))}
             </div>
