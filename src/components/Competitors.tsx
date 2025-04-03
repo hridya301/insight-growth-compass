@@ -35,6 +35,10 @@ import {
 } from 'recharts';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 // Sample competitor data
 const competitorData = [
@@ -315,6 +319,109 @@ const CompetitorCard: React.FC<CompetitorCardProps> = ({ competitor }) => {
 };
 
 export const Competitors: React.FC = () => {
+  const [competitors, setCompetitors] = useState(competitorData);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { toast } = useToast();
+  
+  // New competitor form state
+  const [newCompetitor, setNewCompetitor] = useState({
+    name: '',
+    logo: '/placeholder.svg',
+    description: '',
+    founded: new Date().getFullYear(),
+    employees: '1-50',
+    funding: '',
+    locations: '',
+    strengths: '',
+    weaknesses: '',
+    marketShare: 0,
+    growthRate: 0,
+    customerSatisfaction: 0,
+    pricePoint: 'Standard',
+    threat: 'medium',
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewCompetitor({
+      ...newCompetitor,
+      [name]: value
+    });
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setNewCompetitor({
+      ...newCompetitor,
+      [name]: value
+    });
+  };
+
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const numValue = parseInt(value, 10) || 0;
+    setNewCompetitor({
+      ...newCompetitor,
+      [name]: numValue
+    });
+  };
+
+  const resetForm = () => {
+    setNewCompetitor({
+      name: '',
+      logo: '/placeholder.svg',
+      description: '',
+      founded: new Date().getFullYear(),
+      employees: '1-50',
+      funding: '',
+      locations: '',
+      strengths: '',
+      weaknesses: '',
+      marketShare: 0,
+      growthRate: 0,
+      customerSatisfaction: 0,
+      pricePoint: 'Standard',
+      threat: 'medium',
+    });
+  };
+
+  const handleAddCompetitor = () => {
+    if (!newCompetitor.name) {
+      toast({
+        title: "Error",
+        description: "Competitor name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newCompetitorEntry = {
+      id: competitors.length + 1,
+      name: newCompetitor.name,
+      logo: newCompetitor.logo,
+      description: newCompetitor.description,
+      founded: newCompetitor.founded,
+      employees: newCompetitor.employees,
+      funding: newCompetitor.funding,
+      locations: newCompetitor.locations.split(',').map(location => location.trim()).filter(location => location),
+      strengths: newCompetitor.strengths.split('\n').filter(strength => strength.trim()),
+      weaknesses: newCompetitor.weaknesses.split('\n').filter(weakness => weakness.trim()),
+      marketShare: newCompetitor.marketShare,
+      growthRate: newCompetitor.growthRate,
+      customerSatisfaction: newCompetitor.customerSatisfaction,
+      pricePoint: newCompetitor.pricePoint,
+      threat: newCompetitor.threat,
+    };
+
+    setCompetitors([...competitors, newCompetitorEntry]);
+    setDialogOpen(false);
+    resetForm();
+    
+    toast({
+      title: "Success",
+      description: `${newCompetitor.name} has been added to your competitors list.`,
+    });
+  };
+
   return (
     <div className="p-6 w-full space-y-6">
       <div className="flex items-center justify-between">
@@ -324,7 +431,7 @@ export const Competitors: React.FC = () => {
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh Data
           </Button>
-          <Button>
+          <Button onClick={() => setDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Competitor
           </Button>
@@ -332,7 +439,7 @@ export const Competitors: React.FC = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        {competitorData.map((competitor) => (
+        {competitors.map((competitor) => (
           <CompetitorCard key={competitor.id} competitor={competitor} />
         ))}
       </div>
@@ -536,6 +643,201 @@ export const Competitors: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Add Competitor Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Add New Competitor</DialogTitle>
+            <DialogDescription>
+              Enter the information about your new competitor. Fields marked with * are required.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input 
+                  id="name" 
+                  name="name" 
+                  value={newCompetitor.name} 
+                  onChange={handleInputChange} 
+                  placeholder="Competitor name"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="founded">Founded Year</Label>
+                <Input 
+                  id="founded" 
+                  name="founded" 
+                  type="number" 
+                  value={newCompetitor.founded} 
+                  onChange={handleNumberChange} 
+                  placeholder="Year founded"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea 
+                id="description" 
+                name="description" 
+                value={newCompetitor.description} 
+                onChange={handleInputChange} 
+                placeholder="Brief description of the competitor"
+                rows={3}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="employees">Company Size</Label>
+                <Select 
+                  onValueChange={(value) => handleSelectChange('employees', value)} 
+                  defaultValue={newCompetitor.employees}
+                >
+                  <SelectTrigger id="employees">
+                    <SelectValue placeholder="Select size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1-50">1-50 employees</SelectItem>
+                    <SelectItem value="50-200">50-200 employees</SelectItem>
+                    <SelectItem value="200-500">200-500 employees</SelectItem>
+                    <SelectItem value="500-1000">500-1000 employees</SelectItem>
+                    <SelectItem value="1000+">1000+ employees</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="funding">Funding</Label>
+                <Input 
+                  id="funding" 
+                  name="funding" 
+                  value={newCompetitor.funding} 
+                  onChange={handleInputChange} 
+                  placeholder="e.g. $10M Series A"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="locations">Locations</Label>
+              <Input 
+                id="locations" 
+                name="locations" 
+                value={newCompetitor.locations} 
+                onChange={handleInputChange} 
+                placeholder="Comma-separated locations (e.g. United States, Europe, Asia)"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="strengths">Key Strengths</Label>
+                <Textarea 
+                  id="strengths" 
+                  name="strengths" 
+                  value={newCompetitor.strengths} 
+                  onChange={handleInputChange} 
+                  placeholder="List strengths (one per line)"
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="weaknesses">Known Weaknesses</Label>
+                <Textarea 
+                  id="weaknesses" 
+                  name="weaknesses" 
+                  value={newCompetitor.weaknesses} 
+                  onChange={handleInputChange} 
+                  placeholder="List weaknesses (one per line)"
+                  rows={3}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="marketShare">Market Share (%)</Label>
+                <Input 
+                  id="marketShare" 
+                  name="marketShare" 
+                  type="number" 
+                  min="0" 
+                  max="100" 
+                  value={newCompetitor.marketShare} 
+                  onChange={handleNumberChange} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="growthRate">Growth Rate (%)</Label>
+                <Input 
+                  id="growthRate" 
+                  name="growthRate" 
+                  type="number" 
+                  value={newCompetitor.growthRate} 
+                  onChange={handleNumberChange} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="customerSatisfaction">Satisfaction (0-100)</Label>
+                <Input 
+                  id="customerSatisfaction" 
+                  name="customerSatisfaction" 
+                  type="number" 
+                  min="0" 
+                  max="100" 
+                  value={newCompetitor.customerSatisfaction} 
+                  onChange={handleNumberChange} 
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="pricePoint">Price Point</Label>
+                <Select 
+                  onValueChange={(value) => handleSelectChange('pricePoint', value)} 
+                  defaultValue={newCompetitor.pricePoint}
+                >
+                  <SelectTrigger id="pricePoint">
+                    <SelectValue placeholder="Select price point" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Economy">Economy</SelectItem>
+                    <SelectItem value="Value">Value</SelectItem>
+                    <SelectItem value="Standard">Standard</SelectItem>
+                    <SelectItem value="Premium">Premium</SelectItem>
+                    <SelectItem value="Enterprise">Enterprise</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="threat">Threat Level</Label>
+                <Select 
+                  onValueChange={(value) => handleSelectChange('threat', value)} 
+                  defaultValue={newCompetitor.threat}
+                >
+                  <SelectTrigger id="threat">
+                    <SelectValue placeholder="Select threat level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddCompetitor}>Add Competitor</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

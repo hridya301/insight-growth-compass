@@ -4,6 +4,7 @@ import { NavBar } from '@/components/NavBar';
 import { Sidebar } from '@/components/Sidebar';
 import { Competitors } from '@/components/Competitors';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Toaster } from '@/components/ui/toaster';
 
 const CompetitorsPage = () => {
   const isMobile = useIsMobile();
@@ -17,6 +18,7 @@ const CompetitorsPage = () => {
           <Competitors />
         </div>
       </div>
+      <Toaster />
     </div>
   );
 };
