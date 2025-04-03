@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -151,7 +150,7 @@ const MemberCard: React.FC<{
   };
   
   return (
-    <Card className="card-hover">
+    <Card className="card-hover h-full flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div className="flex items-center space-x-4">
@@ -161,37 +160,37 @@ const MemberCard: React.FC<{
               </div>
             </Avatar>
             <div>
-              <CardTitle className="text-lg">{name}</CardTitle>
-              <CardDescription>{position}</CardDescription>
+              <CardTitle className="text-base sm:text-lg">{name}</CardTitle>
+              <CardDescription className="text-xs sm:text-sm line-clamp-1">{position}</CardDescription>
             </div>
           </div>
-          <Badge variant="outline" className={getAvailabilityBadge(availability)}>
+          <Badge variant="outline" className={`${getAvailabilityBadge(availability)} text-xs whitespace-nowrap`}>
             {availability}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="text-sm space-y-2">
+      <CardContent className="space-y-4 flex-grow">
+        <div className="text-xs sm:text-sm space-y-2">
           <div className="flex items-center text-muted-foreground">
-            <Mail size={14} className="mr-2" />
-            <span>{email}</span>
+            <Mail size={14} className="mr-2 flex-shrink-0" />
+            <span className="truncate">{email}</span>
           </div>
           <div className="flex items-center text-muted-foreground">
-            <Phone size={14} className="mr-2" />
-            <span>{phone}</span>
+            <Phone size={14} className="mr-2 flex-shrink-0" />
+            <span className="truncate">{phone}</span>
           </div>
         </div>
         
         <div className="space-y-3 pt-2">
           <div>
-            <div className="flex justify-between text-sm mb-1">
+            <div className="flex justify-between text-xs sm:text-sm mb-1">
               <span>Performance</span>
               <span>{performance}%</span>
             </div>
             <Progress value={performance} className="h-2" />
           </div>
           
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
             <div className="space-y-1">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Projects</span>
@@ -209,18 +208,16 @@ const MemberCard: React.FC<{
           </div>
         </div>
       </CardContent>
-      <CardFooter>
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" className="text-xs">
-            Message
-          </Button>
-          <Button variant="outline" size="sm" className="text-xs">
-            Schedule Meeting
-          </Button>
-          <Button size="sm" className="text-xs">
-            View Profile
-          </Button>
-        </div>
+      <CardFooter className="flex flex-wrap gap-2 pt-4">
+        <Button variant="outline" size="sm" className="text-xs flex-grow">
+          Message
+        </Button>
+        <Button variant="outline" size="sm" className="text-xs flex-grow">
+          Meeting
+        </Button>
+        <Button size="sm" className="text-xs flex-grow">
+          Profile
+        </Button>
       </CardFooter>
     </Card>
   );
@@ -228,22 +225,22 @@ const MemberCard: React.FC<{
 
 export const Team: React.FC = () => {
   return (
-    <div className="p-6 w-full space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Team Management</h1>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline">Export Team Data</Button>
-          <Button>
+    <div className="p-4 sm:p-6 w-full space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Team Management</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" className="text-xs sm:text-sm">Export Team Data</Button>
+          <Button size="sm" className="text-xs sm:text-sm">
             <UserPlus size={16} className="mr-2" />
             Add Team Member
           </Button>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="md:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <Card className="lg:col-span-1 h-full">
           <CardHeader>
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center text-xl">
               <Users className="mr-2" size={20} />
               Team Overview
             </CardTitle>
@@ -292,36 +289,36 @@ export const Team: React.FC = () => {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-2">
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full text-sm">
               <Calendar size={16} className="mr-2" />
               Team Calendar
             </Button>
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full text-sm">
               <PieChart size={16} className="mr-2" />
               Resource Allocation
             </Button>
           </CardFooter>
         </Card>
         
-        <div className="md:col-span-3 space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="lg:col-span-3 space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div className="flex items-center space-x-4">
-              <h2 className="text-xl font-semibold">Team Members</h2>
+              <h2 className="text-lg sm:text-xl font-semibold">Team Members</h2>
               <Badge>{teamMembers.length} Total</Badge>
             </div>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm">
+            <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                 <Award size={16} className="mr-2" />
                 Top Performers
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                 <BarChart2 size={16} className="mr-2" />
                 Skills Matrix
               </Button>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon" className="h-8 w-8">
                       <ChevronsUpDown size={16} />
                     </Button>
                   </TooltipTrigger>
@@ -333,7 +330,7 @@ export const Team: React.FC = () => {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {teamMembers.map((member) => (
               <MemberCard
                 key={member.id}
