@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -50,26 +50,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Database } from '@/integrations/supabase/types';
 
-interface Competitor {
-  id: string;
-  name: string;
-  logo: string;
-  description: string | null;
-  founded: number | null;
-  employees: string | null;
-  funding: string | null;
-  locations: string[] | null;
-  strengths: string[] | null;
-  weaknesses: string[] | null;
-  market_share: number | null;
-  growth_rate: number | null;
-  customer_satisfaction: number | null;
-  price_point: string | null;
-  threat: string | null;
-  created_at?: string;
-  updated_at?: string;
-}
+type Competitor = Database['public']['Tables']['competitors']['Row'];
 
 const featureComparisonData = [
   {

@@ -7,8 +7,15 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Toaster } from '@/components/ui/toaster';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Create a query client
-const queryClient = new QueryClient();
+// Create a query client with proper configuration
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const CompetitorsPage = () => {
   const isMobile = useIsMobile();
