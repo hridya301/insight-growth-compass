@@ -4,8 +4,11 @@ import { Onboarding } from '@/components/Onboarding';
 import { PollCreator } from '@/components/PollCreator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
       <Card className="w-full max-w-3xl">
@@ -19,7 +22,7 @@ const Index = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-6 justify-center items-center">
-            <Button onClick={() => window.location.href = '/onboarding'} className="w-full md:w-auto px-8">
+            <Button onClick={() => navigate('/onboarding')} className="w-full md:w-auto px-8">
               Complete Onboarding
             </Button>
             <PollCreator />
