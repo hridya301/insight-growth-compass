@@ -12,6 +12,7 @@ import InsightsPage from "./pages/InsightsPage";
 import CompetitorsPage from "./pages/CompetitorsPage";
 import GoalsPage from "./pages/GoalsPage";
 import TeamPage from "./pages/TeamPage";
+import SettingsPage from "./pages/SettingsPage";
 import { Onboarding } from "@/components/Onboarding";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/competitors" element={<CompetitorsPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/team" element={<TeamPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/onboarding" element={<Onboarding />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
