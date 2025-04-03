@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -593,10 +594,12 @@ const AnalysisPreferencesStep: React.FC<OnboardingStepProps> = ({ onNext, onBack
 const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formData, updateFormData }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [webhookResponse, setWebhookResponse] = useState<string | null>(null);
+  const [webhookError, setWebhookError] = useState<string | null>(null);
   
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setWebhookResponse(null);
+    setWebhookError(null);
     
     try {
       const response = await fetch('https://hridya.app.n8n.cloud/webhook-test/a26abbb7-25d4-4a7e-8d18-d3e97d82cee8', {
@@ -609,16 +612,23 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formD
       
       if (response.ok) {
         const responseData = await response.json();
-        setWebhookResponse(JSON.stringify(responseData, null, 2));
+        // Only extract the "output" field from the response
+        if (responseData && responseData.output) {
+          setWebhookResponse(responseData.output);
+        } else {
+          setWebhookResponse("No output data received");
+        }
         toast.success("Setup complete! Your response has been received.");
       } else {
+        const errorMessage = `Error: ${response.status} ${response.statusText}`;
+        setWebhookError(errorMessage);
         toast.error("There was an error submitting your data. Please try again.");
-        setWebhookResponse(`Error: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
+      const errorMessage = `Error: ${error instanceof Error ? error.message : String(error)}`;
+      setWebhookError(errorMessage);
       console.error("Error submitting form:", error);
       toast.error("Connection error. Please check your internet connection and try again.");
-      setWebhookResponse(`Error: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -726,9 +736,9 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formD
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <pre className="bg-white p-4 rounded-md text-xs overflow-x-auto border border-green-100">
+              <div className="bg-white p-4 rounded-md text-sm overflow-x-auto border border-green-100 whitespace-pre-wrap">
                 {webhookResponse}
-              </pre>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -766,11 +776,11 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formD
         </Button>
       </div>
       
-      {webhookResponse && webhookResponse.includes("Error") && (
+      {webhookError && (
         <Alert variant="destructive" className="mt-4">
           <AlertTitle>Submission Error</AlertTitle>
           <AlertDescription>
-            There was an error processing your submission. Please try again or contact support.
+            {webhookError}
           </AlertDescription>
         </Alert>
       )}
