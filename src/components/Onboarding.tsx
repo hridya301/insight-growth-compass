@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { ChevronRight, ChevronLeft, Building, Package, Users, BarChart4, ClipboardCheck } from 'lucide-react';
 
 type OnboardingStepProps = {
   onNext: () => void;
@@ -42,6 +43,20 @@ const CompanyInfoStep: React.FC<OnboardingStepProps> = ({ onNext }) => {
       </div>
       
       <div className="space-y-2">
+        <Label htmlFor="business-type">Business Type</Label>
+        <Select>
+          <SelectTrigger id="business-type">
+            <SelectValue placeholder="Select business type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="startup">Startup</SelectItem>
+            <SelectItem value="sme">Small-Medium Enterprise (SME)</SelectItem>
+            <SelectItem value="enterprise">Enterprise</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="space-y-2">
         <Label htmlFor="company-size">Company Size</Label>
         <Select>
           <SelectTrigger id="company-size">
@@ -63,8 +78,8 @@ const CompanyInfoStep: React.FC<OnboardingStepProps> = ({ onNext }) => {
         <Input id="founded" type="number" placeholder="2020" />
       </div>
       
-      <Button onClick={onNext} className="w-full">
-        Continue
+      <Button onClick={onNext} className="w-full mt-4">
+        Continue <ChevronRight className="ml-2 h-4 w-4" />
       </Button>
     </div>
   );
@@ -76,8 +91,22 @@ const ProductInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="space-y-2">
-        <Label htmlFor="product-name">Product/Service Name</Label>
-        <Input id="product-name" placeholder="Acme Cloud Platform" />
+        <Label htmlFor="product-category">Product/Service Category</Label>
+        <Select>
+          <SelectTrigger id="product-category">
+            <SelectValue placeholder="Select product category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="software">Software</SelectItem>
+            <SelectItem value="hardware">Hardware</SelectItem>
+            <SelectItem value="saas">SaaS</SelectItem>
+            <SelectItem value="ecommerce">E-commerce</SelectItem>
+            <SelectItem value="consulting">Consulting</SelectItem>
+            <SelectItem value="education">Education</SelectItem>
+            <SelectItem value="healthcare">Healthcare</SelectItem>
+            <SelectItem value="other">Other</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       
       <div className="space-y-2">
@@ -98,59 +127,6 @@ const ProductInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
         </RadioGroup>
       </div>
       
-      {productType && (
-        <div className="space-y-2 animate-scale-in">
-          {productType === "physical" && (
-            <>
-              <Label htmlFor="manufacturing-details">Manufacturing Details</Label>
-              <Select>
-                <SelectTrigger id="manufacturing-details">
-                  <SelectValue placeholder="Select manufacturing type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="in-house">In-house manufacturing</SelectItem>
-                  <SelectItem value="outsourced">Outsourced manufacturing</SelectItem>
-                  <SelectItem value="hybrid">Hybrid model</SelectItem>
-                </SelectContent>
-              </Select>
-            </>
-          )}
-          
-          {productType === "digital" && (
-            <>
-              <Label htmlFor="platform">Platform</Label>
-              <Select>
-                <SelectTrigger id="platform">
-                  <SelectValue placeholder="Select platform" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="web">Web</SelectItem>
-                  <SelectItem value="mobile">Mobile</SelectItem>
-                  <SelectItem value="desktop">Desktop</SelectItem>
-                  <SelectItem value="multi-platform">Multi-platform</SelectItem>
-                </SelectContent>
-              </Select>
-            </>
-          )}
-          
-          {productType === "service" && (
-            <>
-              <Label htmlFor="service-delivery">Service Delivery</Label>
-              <Select>
-                <SelectTrigger id="service-delivery">
-                  <SelectValue placeholder="Select service delivery model" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="in-person">In-person</SelectItem>
-                  <SelectItem value="remote">Remote</SelectItem>
-                  <SelectItem value="hybrid">Hybrid</SelectItem>
-                </SelectContent>
-              </Select>
-            </>
-          )}
-        </div>
-      )}
-      
       <div className="space-y-2">
         <Label htmlFor="target-market">Target Market</Label>
         <Select>
@@ -166,6 +142,36 @@ const ProductInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
         </Select>
       </div>
       
+      <div className="space-y-3">
+        <Label>Key Features</Label>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox id="feature1" />
+            <Label htmlFor="feature1">User-friendly</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="feature2" />
+            <Label htmlFor="feature2">Cost-effective</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="feature3" />
+            <Label htmlFor="feature3">Innovative</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="feature4" />
+            <Label htmlFor="feature4">Scalable</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="feature5" />
+            <Label htmlFor="feature5">High quality</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="feature6" />
+            <Label htmlFor="feature6">Eco-friendly</Label>
+          </div>
+        </div>
+      </div>
+      
       <div className="space-y-2">
         <Label htmlFor="product-description">Product/Service Description</Label>
         <Textarea 
@@ -175,12 +181,12 @@ const ProductInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
         />
       </div>
       
-      <div className="flex justify-between">
+      <div className="flex justify-between mt-6">
         <Button variant="outline" onClick={onBack}>
-          Back
+          <ChevronLeft className="mr-2 h-4 w-4" /> Back
         </Button>
         <Button onClick={onNext}>
-          Continue
+          Continue <ChevronRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </div>
@@ -188,10 +194,10 @@ const ProductInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
 };
 
 const CompetitorInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
-  const [competitors, setCompetitors] = useState([{ name: '', strengths: '', weaknesses: '' }]);
+  const [competitors, setCompetitors] = useState([{ name: '', website: '', strengths: '', weaknesses: '' }]);
   
   const addCompetitor = () => {
-    setCompetitors([...competitors, { name: '', strengths: '', weaknesses: '' }]);
+    setCompetitors([...competitors, { name: '', website: '', strengths: '', weaknesses: '' }]);
   };
   
   const updateCompetitor = (index: number, field: string, value: string) => {
@@ -227,6 +233,16 @@ const CompetitorInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) =
               </div>
               
               <div className="space-y-2">
+                <Label htmlFor={`competitor-website-${index}`}>Competitor Website</Label>
+                <Input 
+                  id={`competitor-website-${index}`} 
+                  value={competitor.website}
+                  onChange={(e) => updateCompetitor(index, 'website', e.target.value)}
+                  placeholder="https://competitor.com"
+                />
+              </div>
+              
+              <div className="space-y-2">
                 <Label htmlFor={`competitor-strengths-${index}`}>Key Strengths</Label>
                 <Textarea 
                   id={`competitor-strengths-${index}`} 
@@ -252,12 +268,187 @@ const CompetitorInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) =
         ))}
       </div>
       
-      <div className="flex justify-between">
+      <div className="flex justify-between mt-6">
         <Button variant="outline" onClick={onBack}>
-          Back
+          <ChevronLeft className="mr-2 h-4 w-4" /> Back
         </Button>
         <Button onClick={onNext}>
-          Complete Setup
+          Continue <ChevronRight className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const AnalysisPreferencesStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="space-y-3">
+        <Label>Metrics You Want to Analyze</Label>
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox id="metric1" />
+            <Label htmlFor="metric1">Revenue & Sales</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="metric2" />
+            <Label htmlFor="metric2">Market Trends</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="metric3" />
+            <Label htmlFor="metric3">Customer Feedback</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="metric4" />
+            <Label htmlFor="metric4">Product Performance</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="metric5" />
+            <Label htmlFor="metric5">Competitor Analysis</Label>
+          </div>
+        </div>
+      </div>
+      
+      <div className="space-y-3">
+        <Label>Type of Recommendations</Label>
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox id="rec1" />
+            <Label htmlFor="rec1">Product Improvement</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="rec2" />
+            <Label htmlFor="rec2">Pricing Strategy</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="rec3" />
+            <Label htmlFor="rec3">Marketing Insights</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="rec4" />
+            <Label htmlFor="rec4">Operational Efficiency</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="rec5" />
+            <Label htmlFor="rec5">Customer Experience</Label>
+          </div>
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="analysis-frequency">Analysis Frequency</Label>
+        <Select>
+          <SelectTrigger id="analysis-frequency">
+            <SelectValue placeholder="Select frequency" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="daily">Daily</SelectItem>
+            <SelectItem value="weekly">Weekly</SelectItem>
+            <SelectItem value="monthly">Monthly</SelectItem>
+            <SelectItem value="quarterly">Quarterly</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="additional-notes">Additional Notes</Label>
+        <Textarea 
+          id="additional-notes" 
+          placeholder="Any specific areas you want our analysis to focus on..."
+          rows={4}
+        />
+      </div>
+      
+      <div className="flex justify-between mt-6">
+        <Button variant="outline" onClick={onBack}>
+          <ChevronLeft className="mr-2 h-4 w-4" /> Back
+        </Button>
+        <Button onClick={onNext}>
+          Continue <ChevronRight className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="rounded-md bg-blue-50 p-4 text-blue-800">
+        <h3 className="font-medium mb-2">Review Your Information</h3>
+        <p className="text-sm">
+          Please review all the information you've provided. Once submitted, your personalized dashboard will be created
+          based on these details.
+        </p>
+      </div>
+      
+      <div className="space-y-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-md flex items-center">
+              <Building className="mr-2 h-4 w-4" /> Company Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            <p><span className="font-medium">Company:</span> Acme Inc.</p>
+            <p><span className="font-medium">Industry:</span> Technology</p>
+            <p><span className="font-medium">Business Type:</span> SME</p>
+            <p><span className="font-medium">Size:</span> 11-50 employees</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-md flex items-center">
+              <Package className="mr-2 h-4 w-4" /> Product Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            <p><span className="font-medium">Category:</span> Software</p>
+            <p><span className="font-medium">Type:</span> Digital Product</p>
+            <p><span className="font-medium">Target Market:</span> B2B</p>
+            <p><span className="font-medium">Key Features:</span> User-friendly, Scalable, Innovative</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-md flex items-center">
+              <Users className="mr-2 h-4 w-4" /> Competitor Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            <p><span className="font-medium">Main Competitors:</span> Competitor Inc., IndustryLeader LLC</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-md flex items-center">
+              <BarChart4 className="mr-2 h-4 w-4" /> Analysis Preferences
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            <p><span className="font-medium">Metrics:</span> Revenue & Sales, Market Trends, Customer Feedback</p>
+            <p><span className="font-medium">Recommendations:</span> Product Improvement, Marketing Insights</p>
+            <p><span className="font-medium">Frequency:</span> Weekly</p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="flex items-center space-x-2 mt-4">
+        <Checkbox id="terms" />
+        <Label htmlFor="terms" className="text-sm">
+          I agree to the Terms of Service and Privacy Policy
+        </Label>
+      </div>
+      
+      <div className="flex justify-between mt-6">
+        <Button variant="outline" onClick={onBack}>
+          <ChevronLeft className="mr-2 h-4 w-4" /> Back
+        </Button>
+        <Button onClick={onNext} className="bg-green-600 hover:bg-green-700">
+          Submit <ClipboardCheck className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </div>
@@ -269,7 +460,7 @@ export const Onboarding: React.FC = () => {
   const navigate = useNavigate();
   
   const handleNext = () => {
-    if (step < 3) {
+    if (step < 5) {
       setStep(step + 1);
     } else {
       toast.success("Setup complete! Redirecting to dashboard...");
@@ -296,7 +487,7 @@ export const Onboarding: React.FC = () => {
         <div className="mb-8">
           <div className="relative">
             <div className="flex items-center justify-between">
-              {[1, 2, 3].map((i) => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <div
                   key={i}
                   className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 ${
@@ -312,15 +503,17 @@ export const Onboarding: React.FC = () => {
             <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 -z-10">
               <div
                 className="h-full bg-insight-600 transition-all duration-300"
-                style={{ width: `${((step - 1) / 2) * 100}%` }}
+                style={{ width: `${((step - 1) / 4) * 100}%` }}
               ></div>
             </div>
           </div>
           
-          <div className="flex justify-between mt-2 text-sm">
+          <div className="flex justify-between mt-2 text-xs">
             <span className={step >= 1 ? 'text-insight-600 font-medium' : 'text-gray-500'}>Company</span>
             <span className={step >= 2 ? 'text-insight-600 font-medium' : 'text-gray-500'}>Product</span>
             <span className={step >= 3 ? 'text-insight-600 font-medium' : 'text-gray-500'}>Competitors</span>
+            <span className={step >= 4 ? 'text-insight-600 font-medium' : 'text-gray-500'}>Analysis</span>
+            <span className={step >= 5 ? 'text-insight-600 font-medium' : 'text-gray-500'}>Review</span>
           </div>
         </div>
         
@@ -330,17 +523,23 @@ export const Onboarding: React.FC = () => {
               {step === 1 && 'Company Information'}
               {step === 2 && 'Product/Service Details'}
               {step === 3 && 'Competitor Analysis'}
+              {step === 4 && 'Data Analysis Preferences'}
+              {step === 5 && 'Review & Submit'}
             </CardTitle>
             <CardDescription>
               {step === 1 && 'Tell us about your business'}
               {step === 2 && 'Describe what you offer to your customers'}
               {step === 3 && 'Identify your main competitors'}
+              {step === 4 && 'Select your analysis preferences'}
+              {step === 5 && 'Review your information and submit'}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {step === 1 && <CompanyInfoStep onNext={handleNext} />}
             {step === 2 && <ProductInfoStep onNext={handleNext} onBack={handleBack} />}
             {step === 3 && <CompetitorInfoStep onNext={handleNext} onBack={handleBack} />}
+            {step === 4 && <AnalysisPreferencesStep onNext={handleNext} onBack={handleBack} />}
+            {step === 5 && <ReviewSubmitStep onNext={handleNext} onBack={handleBack} />}
           </CardContent>
         </Card>
       </div>
