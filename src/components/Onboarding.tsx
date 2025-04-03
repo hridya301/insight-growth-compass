@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -597,7 +596,7 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formD
     setIsSubmitting(true);
     
     try {
-      const response = await fetch('https://hridya.app.n8n.cloud/webhook-test/ddceb467-69ab-4408-9bdc-c411be121fc2', {
+      const response = await fetch('https://hridya.app.n8n.cloud/webhook-test/a26abbb7-25d4-4a7e-8d18-d3e97d82cee8', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
