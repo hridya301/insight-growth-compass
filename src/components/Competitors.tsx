@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -49,61 +48,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-// Sample competitor data
-const competitorData = [
-  {
-    id: 1,
-    name: 'Competitor A',
-    logo: '/placeholder.svg',
-    description: 'A leading provider in the market with a focus on enterprise solutions.',
-    founded: 2010,
-    employees: '500-1000',
-    funding: '$75M',
-    locations: ['United States', 'Europe', 'Asia'],
-    strengths: ['Strong brand recognition', 'Excellent customer support', 'Large enterprise client base'],
-    weaknesses: ['Higher pricing', 'Complex implementation', 'Limited customization'],
-    marketShare: 22,
-    growthRate: 15,
-    customerSatisfaction: 85,
-    pricePoint: 'Premium',
-    threat: 'high',
-  },
-  {
-    id: 2,
-    name: 'Competitor B',
-    logo: '/placeholder.svg',
-    description: 'An innovative startup disrupting the market with new technology.',
-    founded: 2018,
-    employees: '50-200',
-    funding: '$25M',
-    locations: ['United States', 'Europe'],
-    strengths: ['Cutting-edge technology', 'Fast product iteration', 'Modern UI/UX'],
-    weaknesses: ['Limited market presence', 'Small support team', 'Narrow feature set'],
-    marketShare: 8,
-    growthRate: 42,
-    customerSatisfaction: 78,
-    pricePoint: 'Value',
-    threat: 'medium',
-  },
-  {
-    id: 3,
-    name: 'Competitor C',
-    logo: '/placeholder.svg',
-    description: 'A well-established player focusing on cost-effective solutions.',
-    founded: 2005,
-    employees: '1000+',
-    funding: 'Public (IPO 2015)',
-    locations: ['Global'],
-    strengths: ['Large customer base', 'Cost-effective solutions', 'Wide geographic presence'],
-    weaknesses: ['Aging technology stack', 'Slow to innovate', 'Inconsistent support quality'],
-    marketShare: 35,
-    growthRate: 5,
-    customerSatisfaction: 72,
-    pricePoint: 'Economy',
-    threat: 'low',
-  },
-];
+interface Competitor {
+  id: string;
+  name: string;
+  logo: string;
+  description: string | null;
+  founded: number | null;
+  employees: string | null;
+  funding: string | null;
+  locations: string[] | null;
+  strengths: string[] | null;
+  weaknesses: string[] | null;
+  market_share: number | null;
+  growth_rate: number | null;
+  customer_satisfaction: number | null;
+  price_point: string | null;
+  threat: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
 
 const featureComparisonData = [
   {
@@ -218,15 +184,17 @@ const marketTrendsData = [
 ];
 
 type CompetitorCardProps = {
-  competitor: typeof competitorData[0];
-  onEdit: (competitor: typeof competitorData[0]) => void;
-  onDelete: (competitorId: number) => void;
+  competitor: Competitor;
+  onEdit: (competitor: Competitor) => void;
+  onDelete: (competitorId: string) => void;
 };
 
 const CompetitorCard: React.FC<CompetitorCardProps> = ({ competitor, onEdit, onDelete }) => {
   const [expanded, setExpanded] = useState(false);
   
-  const getThreatBadge = (threat: string) => {
+  const getThreatBadge = (threat: string | null) => {
+    if (!threat) return null;
+    
     switch (threat) {
       case 'high':
         return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">High Threat</Badge>;
@@ -264,20 +232,20 @@ const CompetitorCard: React.FC<CompetitorCardProps> = ({ competitor, onEdit, onD
         <div className="grid grid-cols-3 gap-2 mb-3">
           <div>
             <p className="text-xs text-muted-foreground">Market Share</p>
-            <p className="font-semibold">{competitor.marketShare}%</p>
+            <p className="font-semibold">{competitor.market_share}%</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Growth</p>
             <p className="font-semibold flex items-center">
               <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-              {competitor.growthRate}%
+              {competitor.growth_rate}%
             </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Satisfaction</p>
             <div className="flex items-center">
-              <Progress value={competitor.customerSatisfaction} className="h-2 w-14 mr-2" />
-              <span className="font-semibold">{competitor.customerSatisfaction}</span>
+              <Progress value={competitor.customer_satisfaction || 0} className="h-2 w-14 mr-2" />
+              <span className="font-semibold">{competitor.customer_satisfaction}</span>
             </div>
           </div>
         </div>
@@ -287,7 +255,7 @@ const CompetitorCard: React.FC<CompetitorCardProps> = ({ competitor, onEdit, onD
             <div>
               <h4 className="font-medium text-sm mb-1">Key Strengths</h4>
               <ul className="list-disc pl-5 text-xs space-y-1">
-                {competitor.strengths.map((strength, i) => (
+                {competitor.strengths && competitor.strengths.map((strength, i) => (
                   <li key={i}>{strength}</li>
                 ))}
               </ul>
@@ -296,7 +264,7 @@ const CompetitorCard: React.FC<CompetitorCardProps> = ({ competitor, onEdit, onD
             <div>
               <h4 className="font-medium text-sm mb-1">Known Weaknesses</h4>
               <ul className="list-disc pl-5 text-xs space-y-1">
-                {competitor.weaknesses.map((weakness, i) => (
+                {competitor.weaknesses && competitor.weaknesses.map((weakness, i) => (
                   <li key={i}>{weakness}</li>
                 ))}
               </ul>
@@ -305,7 +273,7 @@ const CompetitorCard: React.FC<CompetitorCardProps> = ({ competitor, onEdit, onD
             <div>
               <h4 className="font-medium text-sm mb-1">Locations</h4>
               <div className="flex flex-wrap gap-1">
-                {competitor.locations.map((location, i) => (
+                {competitor.locations && competitor.locations.map((location, i) => (
                   <Badge key={i} variant="secondary" className="text-xs">{location}</Badge>
                 ))}
               </div>
@@ -331,15 +299,14 @@ const CompetitorCard: React.FC<CompetitorCardProps> = ({ competitor, onEdit, onD
 };
 
 export const Competitors: React.FC = () => {
-  const [competitors, setCompetitors] = useState(competitorData);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editingCompetitorId, setEditingCompetitorId] = useState<number | null>(null);
-  const [competitorToDeleteId, setCompetitorToDeleteId] = useState<number | null>(null);
+  const [editingCompetitorId, setEditingCompetitorId] = useState<string | null>(null);
+  const [competitorToDeleteId, setCompetitorToDeleteId] = useState<string | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
-  // New competitor form state
   const [newCompetitor, setNewCompetitor] = useState({
     name: '',
     logo: '/placeholder.svg',
@@ -350,11 +317,76 @@ export const Competitors: React.FC = () => {
     locations: '',
     strengths: '',
     weaknesses: '',
-    marketShare: 0,
-    growthRate: 0,
-    customerSatisfaction: 0,
-    pricePoint: 'Standard',
+    market_share: 0,
+    growth_rate: 0,
+    customer_satisfaction: 0,
+    price_point: 'Standard',
     threat: 'medium',
+  });
+
+  const { data: competitors = [], isLoading, error } = useQuery({
+    queryKey: ['competitors'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('competitors')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching competitors:', error);
+        throw new Error(error.message);
+      }
+      
+      return data as Competitor[];
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (competitor: any) => {
+      const { data, error } = await supabase
+        .from('competitors')
+        .insert([competitor])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['competitors'] });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, competitor }: { id: string; competitor: any }) => {
+      const { data, error } = await supabase
+        .from('competitors')
+        .update(competitor)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['competitors'] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('competitors')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['competitors'] });
+    },
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -392,56 +424,67 @@ export const Competitors: React.FC = () => {
       locations: '',
       strengths: '',
       weaknesses: '',
-      marketShare: 0,
-      growthRate: 0,
-      customerSatisfaction: 0,
-      pricePoint: 'Standard',
+      market_share: 0,
+      growth_rate: 0,
+      customer_satisfaction: 0,
+      price_point: 'Standard',
       threat: 'medium',
     });
     setIsEditing(false);
     setEditingCompetitorId(null);
   };
 
-  const handleEditCompetitor = (competitor: typeof competitorData[0]) => {
+  const handleEditCompetitor = (competitor: Competitor) => {
     setIsEditing(true);
     setEditingCompetitorId(competitor.id);
     setNewCompetitor({
       name: competitor.name,
       logo: competitor.logo,
-      description: competitor.description,
-      founded: competitor.founded,
-      employees: competitor.employees,
-      funding: competitor.funding,
-      locations: competitor.locations.join(', '),
-      strengths: competitor.strengths.join('\n'),
-      weaknesses: competitor.weaknesses.join('\n'),
-      marketShare: competitor.marketShare,
-      growthRate: competitor.growthRate,
-      customerSatisfaction: competitor.customerSatisfaction,
-      pricePoint: competitor.pricePoint,
-      threat: competitor.threat,
+      description: competitor.description || '',
+      founded: competitor.founded || new Date().getFullYear(),
+      employees: competitor.employees || '1-50',
+      funding: competitor.funding || '',
+      locations: competitor.locations ? competitor.locations.join(', ') : '',
+      strengths: competitor.strengths ? competitor.strengths.join('\n') : '',
+      weaknesses: competitor.weaknesses ? competitor.weaknesses.join('\n') : '',
+      market_share: competitor.market_share || 0,
+      growth_rate: competitor.growth_rate || 0,
+      customer_satisfaction: competitor.customer_satisfaction || 0,
+      price_point: competitor.price_point || 'Standard',
+      threat: competitor.threat || 'medium',
     });
     setDialogOpen(true);
   };
 
-  const handleDeleteCompetitor = (competitorId: number) => {
+  const handleDeleteCompetitor = (competitorId: string) => {
     setCompetitorToDeleteId(competitorId);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDeleteCompetitor = () => {
+  const confirmDeleteCompetitor = async () => {
     if (competitorToDeleteId) {
-      setCompetitors(competitors.filter(comp => comp.id !== competitorToDeleteId));
-      toast({
-        title: "Competitor deleted",
-        description: "The competitor has been successfully removed.",
-      });
-      setDeleteDialogOpen(false);
-      setCompetitorToDeleteId(null);
+      try {
+        await deleteMutation.mutateAsync(competitorToDeleteId);
+        
+        toast({
+          title: "Competitor deleted",
+          description: "The competitor has been successfully removed.",
+        });
+        
+        setDeleteDialogOpen(false);
+        setCompetitorToDeleteId(null);
+      } catch (error) {
+        console.error('Error deleting competitor:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete competitor. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const handleSaveCompetitor = () => {
+  const handleSaveCompetitor = async () => {
     if (!newCompetitor.name) {
       toast({
         title: "Error",
@@ -452,41 +495,60 @@ export const Competitors: React.FC = () => {
     }
 
     const competitorEntry = {
-      id: isEditing && editingCompetitorId ? editingCompetitorId : competitors.length + 1,
       name: newCompetitor.name,
       logo: newCompetitor.logo,
-      description: newCompetitor.description,
-      founded: newCompetitor.founded,
-      employees: newCompetitor.employees,
-      funding: newCompetitor.funding,
-      locations: newCompetitor.locations.split(',').map(location => location.trim()).filter(location => location),
-      strengths: newCompetitor.strengths.split('\n').filter(strength => strength.trim()),
-      weaknesses: newCompetitor.weaknesses.split('\n').filter(weakness => weakness.trim()),
-      marketShare: newCompetitor.marketShare,
-      growthRate: newCompetitor.growthRate,
-      customerSatisfaction: newCompetitor.customerSatisfaction,
-      pricePoint: newCompetitor.pricePoint,
-      threat: newCompetitor.threat,
+      description: newCompetitor.description || null,
+      founded: newCompetitor.founded || null,
+      employees: newCompetitor.employees || null,
+      funding: newCompetitor.funding || null,
+      locations: newCompetitor.locations ? newCompetitor.locations.split(',').map(location => location.trim()).filter(location => location) : null,
+      strengths: newCompetitor.strengths ? newCompetitor.strengths.split('\n').filter(strength => strength.trim()) : null,
+      weaknesses: newCompetitor.weaknesses ? newCompetitor.weaknesses.split('\n').filter(weakness => weakness.trim()) : null,
+      market_share: newCompetitor.market_share || null,
+      growth_rate: newCompetitor.growth_rate || null,
+      customer_satisfaction: newCompetitor.customer_satisfaction || null,
+      price_point: newCompetitor.price_point || null,
+      threat: newCompetitor.threat || null,
     };
 
-    if (isEditing && editingCompetitorId) {
-      setCompetitors(
-        competitors.map(comp => comp.id === editingCompetitorId ? competitorEntry : comp)
-      );
+    try {
+      if (isEditing && editingCompetitorId) {
+        await updateMutation.mutateAsync({ 
+          id: editingCompetitorId, 
+          competitor: competitorEntry 
+        });
+        
+        toast({
+          title: "Success",
+          description: `${newCompetitor.name} has been updated successfully.`,
+        });
+      } else {
+        await createMutation.mutateAsync(competitorEntry);
+        
+        toast({
+          title: "Success",
+          description: `${newCompetitor.name} has been added to your competitors list.`,
+        });
+      }
+
+      setDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving competitor:', error);
       toast({
-        title: "Success",
-        description: `${newCompetitor.name} has been updated successfully.`,
-      });
-    } else {
-      setCompetitors([...competitors, competitorEntry]);
-      toast({
-        title: "Success",
-        description: `${newCompetitor.name} has been added to your competitors list.`,
+        title: "Error",
+        description: "Failed to save competitor. Please try again.",
+        variant: "destructive",
       });
     }
+  };
 
-    setDialogOpen(false);
-    resetForm();
+  const refreshData = () => {
+    queryClient.invalidateQueries({ queryKey: ['competitors'] });
+    toast({
+      title: "Data refreshed",
+      description: "The competitors list has been refreshed.",
+    });
   };
 
   const dialogTitle = isEditing ? "Edit Competitor" : "Add New Competitor";
@@ -500,7 +562,7 @@ export const Competitors: React.FC = () => {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Competitors</h1>
         <div className="flex items-center space-x-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={refreshData}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh Data
           </Button>
@@ -514,16 +576,46 @@ export const Competitors: React.FC = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        {competitors.map((competitor) => (
-          <CompetitorCard 
-            key={competitor.id} 
-            competitor={competitor} 
-            onEdit={handleEditCompetitor}
-            onDelete={handleDeleteCompetitor}
-          />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <div className="text-center">
+            <RefreshCw className="h-10 w-10 animate-spin mx-auto mb-4 text-primary" />
+            <p>Loading competitors...</p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 my-4">
+          <h3 className="text-red-800 font-medium">Error loading data</h3>
+          <p className="text-red-600">There was a problem loading the competitors list. Please try again.</p>
+          <Button variant="outline" className="mt-2" onClick={refreshData}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </div>
+      ) : competitors.length === 0 ? (
+        <div className="bg-gray-50 border border-gray-200 rounded-md p-8 my-4 text-center">
+          <h3 className="text-lg font-medium mb-2">No competitors found</h3>
+          <p className="text-gray-600 mb-4">Get started by adding your first competitor.</p>
+          <Button onClick={() => {
+            resetForm();
+            setDialogOpen(true);
+          }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Competitor
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {competitors.map((competitor) => (
+            <CompetitorCard 
+              key={competitor.id} 
+              competitor={competitor} 
+              onEdit={handleEditCompetitor}
+              onDelete={handleDeleteCompetitor}
+            />
+          ))}
+        </div>
+      )}
       
       <Tabs defaultValue="features" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
@@ -725,7 +817,6 @@ export const Competitors: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Edit/Add Competitor Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => {
         if (!open) resetForm();
         setDialogOpen(open);
@@ -845,36 +936,36 @@ export const Competitors: React.FC = () => {
             
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="marketShare">Market Share (%)</Label>
+                <Label htmlFor="market_share">Market Share (%)</Label>
                 <Input 
-                  id="marketShare" 
-                  name="marketShare" 
+                  id="market_share" 
+                  name="market_share" 
                   type="number" 
                   min="0" 
                   max="100" 
-                  value={newCompetitor.marketShare} 
+                  value={newCompetitor.market_share} 
                   onChange={handleNumberChange} 
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="growthRate">Growth Rate (%)</Label>
+                <Label htmlFor="growth_rate">Growth Rate (%)</Label>
                 <Input 
-                  id="growthRate" 
-                  name="growthRate" 
+                  id="growth_rate" 
+                  name="growth_rate" 
                   type="number" 
-                  value={newCompetitor.growthRate} 
+                  value={newCompetitor.growth_rate} 
                   onChange={handleNumberChange} 
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="customerSatisfaction">Satisfaction (0-100)</Label>
+                <Label htmlFor="customer_satisfaction">Satisfaction (0-100)</Label>
                 <Input 
-                  id="customerSatisfaction" 
-                  name="customerSatisfaction" 
+                  id="customer_satisfaction" 
+                  name="customer_satisfaction" 
                   type="number" 
                   min="0" 
                   max="100" 
-                  value={newCompetitor.customerSatisfaction} 
+                  value={newCompetitor.customer_satisfaction} 
                   onChange={handleNumberChange} 
                 />
               </div>
@@ -882,13 +973,13 @@ export const Competitors: React.FC = () => {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="pricePoint">Price Point</Label>
+                <Label htmlFor="price_point">Price Point</Label>
                 <Select 
-                  onValueChange={(value) => handleSelectChange('pricePoint', value)} 
-                  defaultValue={newCompetitor.pricePoint}
-                  value={newCompetitor.pricePoint}
+                  onValueChange={(value) => handleSelectChange('price_point', value)} 
+                  defaultValue={newCompetitor.price_point}
+                  value={newCompetitor.price_point}
                 >
-                  <SelectTrigger id="pricePoint">
+                  <SelectTrigger id="price_point">
                     <SelectValue placeholder="Select price point" />
                   </SelectTrigger>
                   <SelectContent>
@@ -933,7 +1024,6 @@ export const Competitors: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
