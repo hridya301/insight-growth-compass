@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { ChevronRight, ChevronLeft, Building, Package, Users, BarChart4, ClipboardCheck, X, PlusCircle, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type OnboardingStepProps = {
   onNext: () => void;
@@ -591,9 +592,11 @@ const AnalysisPreferencesStep: React.FC<OnboardingStepProps> = ({ onNext, onBack
 
 const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formData, updateFormData }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [webhookResponse, setWebhookResponse] = useState<string | null>(null);
   
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setWebhookResponse(null);
     
     try {
       const response = await fetch('https://hridya.app.n8n.cloud/webhook-test/a26abbb7-25d4-4a7e-8d18-d3e97d82cee8', {
@@ -605,14 +608,17 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formD
       });
       
       if (response.ok) {
-        toast.success("Setup complete! Redirecting to dashboard...");
-        setTimeout(() => onNext(), 1500);
+        const responseData = await response.json();
+        setWebhookResponse(JSON.stringify(responseData, null, 2));
+        toast.success("Setup complete! Your response has been received.");
       } else {
         toast.error("There was an error submitting your data. Please try again.");
+        setWebhookResponse(`Error: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
       console.error("Error submitting form:", error);
       toast.error("Connection error. Please check your internet connection and try again.");
+      setWebhookResponse(`Error: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -711,6 +717,21 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formD
             )}
           </CardContent>
         </Card>
+        
+        {webhookResponse && (
+          <Card className="border border-green-200 shadow-sm bg-green-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-md flex items-center text-green-800">
+                <ClipboardCheck className="mr-2 h-4 w-4" /> Here is your Response
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <pre className="bg-white p-4 rounded-md text-xs overflow-x-auto border border-green-100">
+                {webhookResponse}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
       </div>
       
       <div className="flex items-center space-x-2 mt-6 p-3 bg-gray-50 rounded-md">
@@ -744,6 +765,15 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formD
           )}
         </Button>
       </div>
+      
+      {webhookResponse && webhookResponse.includes("Error") && (
+        <Alert variant="destructive" className="mt-4">
+          <AlertTitle>Submission Error</AlertTitle>
+          <AlertDescription>
+            There was an error processing your submission. Please try again or contact support.
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 };
