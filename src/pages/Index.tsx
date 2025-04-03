@@ -23,10 +23,10 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
-      <Card className="w-full max-w-3xl">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 md:p-8 flex items-center justify-center">
+      <Card className="w-full max-w-4xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center text-insight-600">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-center text-insight-600">
             Welcome to <span className="text-indigo-600">InsightGrowth</span>
           </CardTitle>
           <CardDescription className="text-center">
@@ -34,12 +34,12 @@ const Index = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             {navigationOptions.map((option) => (
               <Button 
                 key={option.path}
                 onClick={() => navigate(option.path)} 
-                className="flex items-center justify-center h-16 text-md"
+                className="flex items-center justify-center h-14 sm:h-16 text-sm sm:text-md"
                 variant={option.path === '/onboarding' ? 'default' : 'outline'}
               >
                 {option.icon}
@@ -48,7 +48,7 @@ const Index = () => {
             ))}
           </div>
           
-          <div className="mt-12 text-center text-gray-500 text-sm">
+          <div className="mt-8 sm:mt-12 text-center text-gray-500 text-xs sm:text-sm">
             <p>
               InsightGrowth helps you analyze your business data and compare with competitors
               to provide valuable insights for growth.
