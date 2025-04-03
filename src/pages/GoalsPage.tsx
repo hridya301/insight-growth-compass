@@ -29,7 +29,10 @@ const GoalsPage = () => {
     async function checkConnection() {
       try {
         // Ping Supabase to check connectivity
-        const { data, error } = await supabase.from('goals').select('count').limit(1);
+        const { data, error } = await supabase
+          .from('goals')
+          .select('count')
+          .limit(1);
         
         if (error) {
           console.error("Supabase connection error:", error);

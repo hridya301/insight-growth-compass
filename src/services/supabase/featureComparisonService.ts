@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 
 export interface FeatureComparison {
   id?: string;
@@ -31,7 +32,7 @@ export const featureComparisonService = {
         id: item.id,
         feature: item.feature,
         your_product: item.your_product,
-        competitors: item.competitors,
+        competitors: item.competitors as {name: string; hasFeature: boolean;}[],
         category: item.category,
         created_at: item.created_at,
         updated_at: item.updated_at

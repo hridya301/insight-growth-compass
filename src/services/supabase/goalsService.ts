@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 
 export interface Goal {
   id?: string;
@@ -59,9 +60,19 @@ export const goalsService = {
   // Create a new goal
   createGoal: async (goal: Omit<Goal, 'id'>): Promise<Goal | null> => {
     try {
+      const goalData = {
+        title: goal.title,
+        description: goal.description,
+        progress: goal.progress,
+        due_date: goal.due_date,
+        status: goal.status,
+        priority: goal.priority,
+        category: goal.category
+      };
+
       const { data, error } = await supabase
         .from('goals')
-        .insert([goal])
+        .insert([goalData])
         .select()
         .single();
       
@@ -80,12 +91,19 @@ export const goalsService = {
   // Update an existing goal
   updateGoal: async (id: string, goal: Partial<Goal>): Promise<boolean> => {
     try {
+      const updateData: any = {};
+      if (goal.title) updateData.title = goal.title;
+      if (goal.description) updateData.description = goal.description;
+      if (goal.progress !== undefined) updateData.progress = goal.progress;
+      if (goal.due_date) updateData.due_date = goal.due_date;
+      if (goal.status) updateData.status = goal.status;
+      if (goal.priority) updateData.priority = goal.priority;
+      if (goal.category) updateData.category = goal.category;
+      updateData.updated_at = new Date().toISOString();
+
       const { error } = await supabase
         .from('goals')
-        .update({
-          ...goal,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', id);
       
       if (error) {

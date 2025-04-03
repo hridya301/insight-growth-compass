@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 
 export interface AttributeComparison {
   id?: string;
@@ -31,7 +32,7 @@ export const attributeComparisonService = {
         id: item.id,
         attribute: item.attribute,
         your_product: item.your_product,
-        competitors: item.competitors,
+        competitors: item.competitors as {name: string; score: number;}[],
         category: item.category,
         created_at: item.created_at,
         updated_at: item.updated_at
