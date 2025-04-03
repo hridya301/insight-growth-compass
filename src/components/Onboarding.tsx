@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,16 @@ type OnboardingStepProps = {
   onBack?: () => void;
   formData: FormData;
   updateFormData: (data: Partial<FormData>) => void;
+};
+
+type ReviewSubmitStepProps = OnboardingStepProps & {
+  setWebhookResponse: (response: string | null) => void;
+  setWebhookError: (error: string | null) => void;
+};
+
+type ResponseStepProps = OnboardingStepProps & {
+  webhookResponse: string | null;
+  webhookError: string | null;
 };
 
 type Competitor = {
@@ -591,10 +600,8 @@ const AnalysisPreferencesStep: React.FC<OnboardingStepProps> = ({ onNext, onBack
   );
 };
 
-const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formData, updateFormData }) => {
+const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({ onNext, onBack, formData, updateFormData, setWebhookResponse, setWebhookError }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [webhookResponse, setWebhookResponse] = useState<string | null>(null);
-  const [webhookError, setWebhookError] = useState<string | null>(null);
   
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -619,6 +626,7 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formD
           setWebhookResponse("No output data received");
         }
         toast.success("Setup complete! Your response has been received.");
+        onNext(); // Move to the response step
       } else {
         const errorMessage = `Error: ${response.status} ${response.statusText}`;
         setWebhookError(errorMessage);
@@ -727,21 +735,6 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formD
             )}
           </CardContent>
         </Card>
-        
-        {webhookResponse && (
-          <Card className="border border-green-200 shadow-sm bg-green-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-md flex items-center text-green-800">
-                <ClipboardCheck className="mr-2 h-4 w-4" /> Here is your Response
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-white p-4 rounded-md text-sm overflow-x-auto border border-green-100 whitespace-pre-wrap">
-                {webhookResponse}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
       
       <div className="flex items-center space-x-2 mt-6 p-3 bg-gray-50 rounded-md">
@@ -776,6 +769,43 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formD
         </Button>
       </div>
       
+      {setWebhookError && (
+        <Alert variant="destructive" className="mt-4">
+          <AlertTitle>Submission Error</AlertTitle>
+          <AlertDescription>
+            {setWebhookError}
+          </AlertDescription>
+        </Alert>
+      )}
+    </div>
+  );
+};
+
+const ResponseStep: React.FC<ResponseStepProps> = ({ onNext, onBack, formData, updateFormData, webhookResponse, webhookError }) => {
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="rounded-md bg-green-50 p-5 text-green-800">
+        <h3 className="font-medium mb-2">Setup Complete!</h3>
+        <p className="text-sm">
+          Thank you for providing your information. Below is your personalized response.
+        </p>
+      </div>
+      
+      {webhookResponse && (
+        <Card className="border border-green-200 shadow-md bg-green-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-md flex items-center text-green-800">
+              <ClipboardCheck className="mr-2 h-4 w-4" /> Here is your Response
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-white p-6 rounded-md text-sm overflow-x-auto border border-green-100 whitespace-pre-wrap">
+              {webhookResponse}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       {webhookError && (
         <Alert variant="destructive" className="mt-4">
           <AlertTitle>Submission Error</AlertTitle>
@@ -784,6 +814,18 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formD
           </AlertDescription>
         </Alert>
       )}
+      
+      <div className="flex justify-between mt-8">
+        <Button variant="outline" onClick={onBack} className="border-gray-200">
+          <ChevronLeft className="mr-2 h-4 w-4" /> Back to Review
+        </Button>
+        <Button 
+          onClick={onNext} 
+          className="bg-insight-600 hover:bg-insight-700 text-white"
+        >
+          Go to Dashboard <ChevronRight className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 };
@@ -791,6 +833,8 @@ const ReviewSubmitStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, formD
 export const Onboarding: React.FC = () => {
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
+  const [webhookResponse, setWebhookResponse] = useState<string | null>(null);
+  const [webhookError, setWebhookError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     // Company Info
@@ -825,7 +869,7 @@ export const Onboarding: React.FC = () => {
   };
   
   const handleNext = () => {
-    if (step < 5) {
+    if (step < 6) {
       setStep(step + 1);
     } else {
       navigate('/dashboard');
@@ -851,7 +895,7 @@ export const Onboarding: React.FC = () => {
         <div className="mb-8">
           <div className="relative">
             <div className="flex items-center justify-between">
-              {[1, 2, 3, 4, 5].map((i) => (
+              {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div
                   key={i}
                   className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 ${
@@ -867,7 +911,7 @@ export const Onboarding: React.FC = () => {
             <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 -z-10">
               <div
                 className="h-full bg-insight-600 transition-all duration-300"
-                style={{ width: `${((step - 1) / 4) * 100}%` }}
+                style={{ width: `${((step - 1) / 5) * 100}%` }}
               ></div>
             </div>
           </div>
@@ -878,6 +922,7 @@ export const Onboarding: React.FC = () => {
             <span className={step >= 3 ? 'text-insight-600 font-medium' : 'text-gray-500'}>Competitors</span>
             <span className={step >= 4 ? 'text-insight-600 font-medium' : 'text-gray-500'}>Analysis</span>
             <span className={step >= 5 ? 'text-insight-600 font-medium' : 'text-gray-500'}>Review</span>
+            <span className={step >= 6 ? 'text-insight-600 font-medium' : 'text-gray-500'}>Response</span>
           </div>
         </div>
         
@@ -889,6 +934,7 @@ export const Onboarding: React.FC = () => {
               {step === 3 && 'Competitor Analysis'}
               {step === 4 && 'Data Analysis Preferences'}
               {step === 5 && 'Review & Submit'}
+              {step === 6 && 'Your Personalized Response'}
             </CardTitle>
             <CardDescription className="text-gray-600">
               {step === 1 && 'Tell us about your business'}
@@ -896,6 +942,7 @@ export const Onboarding: React.FC = () => {
               {step === 3 && 'Identify your main competitors'}
               {step === 4 && 'Select your analysis preferences'}
               {step === 5 && 'Review your information and submit'}
+              {step === 6 && 'Your personalized insights based on your information'}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
@@ -903,7 +950,26 @@ export const Onboarding: React.FC = () => {
             {step === 2 && <ProductInfoStep onNext={handleNext} onBack={handleBack} formData={formData} updateFormData={updateFormData} />}
             {step === 3 && <CompetitorInfoStep onNext={handleNext} onBack={handleBack} formData={formData} updateFormData={updateFormData} />}
             {step === 4 && <AnalysisPreferencesStep onNext={handleNext} onBack={handleBack} formData={formData} updateFormData={updateFormData} />}
-            {step === 5 && <ReviewSubmitStep onNext={handleNext} onBack={handleBack} formData={formData} updateFormData={updateFormData} />}
+            {step === 5 && (
+              <ReviewSubmitStep 
+                onNext={handleNext} 
+                onBack={handleBack} 
+                formData={formData} 
+                updateFormData={updateFormData} 
+                setWebhookResponse={setWebhookResponse}
+                setWebhookError={setWebhookError}
+              />
+            )}
+            {step === 6 && (
+              <ResponseStep 
+                onNext={handleNext} 
+                onBack={handleBack} 
+                formData={formData} 
+                updateFormData={updateFormData}
+                webhookResponse={webhookResponse}
+                webhookError={webhookError}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
