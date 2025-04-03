@@ -13,7 +13,7 @@ const GoalsPage = () => {
       <NavBar />
       <div className="flex flex-grow">
         <Sidebar />
-        <div className={`${isMobile ? 'ml-0' : 'ml-0 md:ml-64'} flex-grow pt-16 w-full transition-all duration-300`}>
+        <div className={`${isMobile ? 'ml-0' : 'ml-0 md:ml-64'} flex-grow pt-16 w-full transition-all duration-300 overflow-y-auto`}>
           <Goals />
         </div>
       </div>
