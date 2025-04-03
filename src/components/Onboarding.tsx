@@ -769,11 +769,11 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({ onNext, onBack, for
         </Button>
       </div>
       
-      {setWebhookError && (
+      {webhookError && (
         <Alert variant="destructive" className="mt-4">
           <AlertTitle>Submission Error</AlertTitle>
           <AlertDescription>
-            {setWebhookError}
+            {webhookError}
           </AlertDescription>
         </Alert>
       )}
