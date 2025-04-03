@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Card, 
@@ -40,7 +39,6 @@ import {
 } from 'recharts';
 import { Download, RefreshCw, Filter, TrendingUp, AlertCircle } from 'lucide-react';
 
-// Sample data for analytics
 const performanceData = [
   { month: 'Jan', revenue: 4000, profit: 2400, customers: 240 },
   { month: 'Feb', revenue: 3000, profit: 1398, customers: 210 },
@@ -290,8 +288,15 @@ export const Analytics: React.FC = () => {
                     <Bar 
                       dataKey="growth" 
                       radius={[0, 4, 4, 0]}
-                      fill={(entry: any) => (entry.growth >= 0 ? "#10b981" : "#ef4444")}
-                    />
+                      fill="#10b981"
+                    >
+                      {productData.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.growth >= 0 ? "#10b981" : "#ef4444"} 
+                        />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -476,9 +481,22 @@ export const Analytics: React.FC = () => {
                     <Tooltip formatter={(value) => [`$${value}`, 'Price']} />
                     <Bar 
                       dataKey="value" 
-                      fill={(entry: any) => entry.name === 'Your Company' ? '#3894ff' : '#94ceff'}
+                      fill="#94ceff"
                       radius={[0, 4, 4, 0]} 
-                    />
+                    >
+                      {[
+                        { name: 'Your Company', value: 75 },
+                        { name: 'Industry Average', value: 82 },
+                        { name: 'Competitor A', value: 65 },
+                        { name: 'Competitor B', value: 95 },
+                        { name: 'Competitor C', value: 70 },
+                      ].map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.name === 'Your Company' ? '#3894ff' : '#94ceff'} 
+                        />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
