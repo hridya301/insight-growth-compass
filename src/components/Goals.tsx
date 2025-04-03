@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { goalsService, Goal as GoalType } from '@/services/mongodb/goalsService';
 
-// Goal interface for better type safety
+// Component Goal interface that works with the component structure
 interface Goal {
   _id?: string;
   id?: number;
@@ -30,6 +30,34 @@ interface Goal {
   createdAt?: Date;
   updatedAt?: Date;
 }
+
+// Helper function to convert from MongoDB Goal to Component Goal
+const convertToComponentGoal = (goal: GoalType): Goal => {
+  return {
+    _id: typeof goal._id === 'string' ? goal._id : goal._id?.toString(),
+    title: goal.title,
+    description: goal.description,
+    progress: goal.progress,
+    dueDate: goal.dueDate instanceof Date ? goal.dueDate.toISOString() : goal.dueDate.toString(),
+    status: goal.status,
+    priority: goal.priority,
+    category: goal.category,
+    createdAt: goal.createdAt,
+    updatedAt: goal.updatedAt,
+    id: typeof goal._id === 'string' ? parseInt(goal._id.slice(-4), 16) % 10000 : Math.floor(Math.random() * 10000)
+  };
+};
+
+// Helper function to convert from Component Goal to MongoDB Goal
+const convertToMongoGoal = (goal: Partial<Goal>): Partial<GoalType> => {
+  const mongoGoal: Partial<GoalType> = { ...goal };
+  
+  if (goal.dueDate) {
+    mongoGoal.dueDate = new Date(goal.dueDate);
+  }
+  
+  return mongoGoal;
+};
 
 // Define the goal schema for form validation
 const goalSchema = z.object({
@@ -72,15 +100,17 @@ const GoalCard: React.FC<{
   });
 
   const handleProgressUpdate = (data: ProgressUpdateValues) => {
-    onUpdateProgress(goal._id || '', {
-      progress: data.progress,
-      status: data.status
-    });
-    
-    toast({
-      title: "Progress Updated",
-      description: `Updated progress for '${goal.title}' to ${data.progress}%`
-    });
+    if (goal._id) {
+      onUpdateProgress(goal._id, {
+        progress: data.progress,
+        status: data.status
+      });
+      
+      toast({
+        title: "Progress Updated",
+        description: `Updated progress for '${goal.title}' to ${data.progress}%`
+      });
+    }
     
     setUpdateDialogOpen(false);
   };
@@ -327,10 +357,13 @@ export const Goals: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Fetch goals from database
-  const { data: allGoals = [], isLoading: isLoadingGoals } = useQuery({
+  const { data: mongoGoals = [], isLoading: isLoadingGoals } = useQuery({
     queryKey: ['goals'],
     queryFn: goalsService.getGoals,
   });
+
+  // Convert MongoDB goals to component goals
+  const allGoals: Goal[] = (mongoGoals as GoalType[]).map(convertToComponentGoal);
 
   // Filter by category
   const quarterlyGoals = allGoals.filter((goal: Goal) => goal.category === "Quarterly");
@@ -407,9 +440,11 @@ export const Goals: React.FC = () => {
 
   // Function to update a specific goal's progress
   const handleUpdateGoal = (goalId: string, updatedData: Partial<Goal>) => {
+    const mongoData = convertToMongoGoal(updatedData);
+    
     updateGoalMutation.mutate({
       id: goalId,
-      data: updatedData
+      data: mongoData
     });
   };
 
@@ -617,7 +652,7 @@ export const Goals: React.FC = () => {
                 </div>
                 <div className="text-sm">
                   {getTopPerformers().map((goal) => (
-                    <div key={`top-${goal._id}`} className="flex justify-between py-1">
+                    <div key={`top-${goal._id || Math.random()}`} className="flex justify-between py-1">
                       <span>{goal.title}</span>
                       <span className="font-medium">{goal.progress}%</span>
                     </div>
@@ -645,7 +680,7 @@ export const Goals: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {quarterlyGoals.map((goal) => (
                   <GoalCard
-                    key={goal._id}
+                    key={`quarterly-${goal._id || Math.random()}`}
                     goal={goal}
                     onUpdateProgress={handleUpdateGoal}
                   />
@@ -670,7 +705,7 @@ export const Goals: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {annualGoals.map((goal) => (
                   <GoalCard
-                    key={goal._id}
+                    key={`annual-${goal._id || Math.random()}`}
                     goal={goal}
                     onUpdateProgress={handleUpdateGoal}
                   />
@@ -689,3 +724,4 @@ export const Goals: React.FC = () => {
     </div>
   );
 };
+
