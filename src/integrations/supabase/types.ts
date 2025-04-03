@@ -168,6 +168,57 @@ export type Database = {
         }
         Relationships: []
       }
+      team_members: {
+        Row: {
+          availability: string
+          avatar: string
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          performance: number
+          phone: string
+          position: string
+          projects: number
+          projects_completed: number
+          tasks: number
+          tasks_completed: number
+          updated_at: string | null
+        }
+        Insert: {
+          availability?: string
+          avatar: string
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          performance?: number
+          phone: string
+          position: string
+          projects?: number
+          projects_completed?: number
+          tasks?: number
+          tasks_completed?: number
+          updated_at?: string | null
+        }
+        Update: {
+          availability?: string
+          avatar?: string
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          performance?: number
+          phone?: string
+          position?: string
+          projects?: number
+          projects_completed?: number
+          tasks?: number
+          tasks_completed?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

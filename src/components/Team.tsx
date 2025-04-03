@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/components/ui/use-toast';
 import { 
   Users, 
   UserPlus, 
@@ -13,99 +15,13 @@ import {
   PieChart, 
   Award, 
   BarChart2,
-  ChevronsUpDown
+  ChevronsUpDown,
+  AlertCircle
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { teamService, TeamMember } from '@/services/supabase/teamService';
+import { useQuery } from '@tanstack/react-query';
 
-// Sample team members data
-const teamMembers = [
-  {
-    id: 1,
-    name: 'Emma Thompson',
-    position: 'Chief Marketing Officer',
-    email: 'emma@example.com',
-    phone: '+1 (555) 123-4567',
-    avatar: 'ET',
-    projects: 6,
-    projectsCompleted: 4,
-    tasks: 18,
-    tasksCompleted: 14,
-    performance: 92,
-    availability: 'Available'
-  },
-  {
-    id: 2,
-    name: 'Michael Chen',
-    position: 'Senior Data Analyst',
-    email: 'michael@example.com',
-    phone: '+1 (555) 987-6543',
-    avatar: 'MC',
-    projects: 4,
-    projectsCompleted: 3,
-    tasks: 23,
-    tasksCompleted: 20,
-    performance: 96,
-    availability: 'In Meeting'
-  },
-  {
-    id: 3,
-    name: 'Sarah Rodriguez',
-    position: 'UX Designer',
-    email: 'sarah@example.com',
-    phone: '+1 (555) 456-7890',
-    avatar: 'SR',
-    projects: 5,
-    projectsCompleted: 2,
-    tasks: 15,
-    tasksCompleted: 11,
-    performance: 88,
-    availability: 'Available'
-  },
-  {
-    id: 4,
-    name: 'David Kim',
-    position: 'Product Manager',
-    email: 'david@example.com',
-    phone: '+1 (555) 789-0123',
-    avatar: 'DK',
-    projects: 7,
-    projectsCompleted: 5,
-    tasks: 29,
-    tasksCompleted: 24,
-    performance: 94,
-    availability: 'On Leave'
-  },
-  {
-    id: 5,
-    name: 'Jessica Patel',
-    position: 'Content Strategist',
-    email: 'jessica@example.com',
-    phone: '+1 (555) 234-5678',
-    avatar: 'JP',
-    projects: 3,
-    projectsCompleted: 1,
-    tasks: 12,
-    tasksCompleted: 7,
-    performance: 82,
-    availability: 'Available'
-  },
-  {
-    id: 6,
-    name: 'Alex Johnson',
-    position: 'Software Engineer',
-    email: 'alex@example.com',
-    phone: '+1 (555) 345-6789',
-    avatar: 'AJ',
-    projects: 5,
-    projectsCompleted: 4,
-    tasks: 26,
-    tasksCompleted: 22,
-    performance: 90,
-    availability: 'Remote'
-  }
-];
-
-// Sample team performance data
 const teamPerformance = {
   avgProductivity: 92,
   tasksCompleted: 98,
@@ -114,28 +30,16 @@ const teamPerformance = {
   teamCollaboration: 94
 };
 
-const MemberCard: React.FC<{
-  name: string;
-  position: string;
-  email: string;
-  phone: string;
-  avatar: string;
-  projects: number;
-  projectsCompleted: number;
-  tasks: number;
-  tasksCompleted: number;
-  performance: number;
-  availability: string;
-}> = ({ 
+const MemberCard: React.FC<TeamMember> = ({ 
   name, 
   position, 
   email, 
   phone, 
   avatar, 
   projects, 
-  projectsCompleted,
+  projects_completed,
   tasks,
-  tasksCompleted,
+  tasks_completed,
   performance,
   availability
 }) => {
@@ -194,16 +98,16 @@ const MemberCard: React.FC<{
             <div className="space-y-1">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Projects</span>
-                <span>{projectsCompleted}/{projects}</span>
+                <span>{projects_completed}/{projects}</span>
               </div>
-              <Progress value={(projectsCompleted / projects) * 100} className="h-1.5" />
+              <Progress value={(projects_completed / projects) * 100} className="h-1.5" />
             </div>
             <div className="space-y-1">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Tasks</span>
-                <span>{tasksCompleted}/{tasks}</span>
+                <span>{tasks_completed}/{tasks}</span>
               </div>
-              <Progress value={(tasksCompleted / tasks) * 100} className="h-1.5" />
+              <Progress value={(tasks_completed / tasks) * 100} className="h-1.5" />
             </div>
           </div>
         </div>
@@ -224,6 +128,69 @@ const MemberCard: React.FC<{
 };
 
 export const Team: React.FC = () => {
+  const { data: teamMembers, isLoading, isError, error } = useQuery({
+    queryKey: ['teamMembers'],
+    queryFn: teamService.getTeamMembers,
+  });
+
+  const totalMembers = teamMembers?.length || 0;
+
+  useEffect(() => {
+    if (isError && error) {
+      toast({
+        title: "Error Loading Team",
+        description: "Could not load team members. Please try again later.",
+        variant: "destructive",
+      });
+    }
+  }, [isError, error]);
+
+  const MemberCardSkeleton = () => (
+    <Card className="h-full">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div>
+              <Skeleton className="h-5 w-28 mb-1" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          </div>
+          <Skeleton className="h-5 w-20" />
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+        </div>
+        <div className="space-y-3 pt-2">
+          <div>
+            <div className="flex justify-between mb-1">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-8" />
+            </div>
+            <Skeleton className="h-2 w-full" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-2 w-full" />
+            </div>
+            <div className="space-y-1">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-2 w-full" />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="flex flex-wrap gap-2 pt-4">
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+      </CardFooter>
+    </Card>
+  );
+
   return (
     <div className="p-4 sm:p-6 w-full space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -247,7 +214,11 @@ export const Team: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="text-center space-y-2">
-              <div className="text-4xl font-bold">{teamMembers.length}</div>
+              {isLoading ? (
+                <Skeleton className="h-12 w-12 mx-auto" />
+              ) : (
+                <div className="text-4xl font-bold">{totalMembers}</div>
+              )}
               <div className="text-sm text-muted-foreground">Team Members</div>
             </div>
             
@@ -304,7 +275,7 @@ export const Team: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div className="flex items-center space-x-4">
               <h2 className="text-lg sm:text-xl font-semibold">Team Members</h2>
-              <Badge>{teamMembers.length} Total</Badge>
+              {!isLoading && <Badge>{totalMembers} Total</Badge>}
             </div>
             <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
               <Button variant="outline" size="sm" className="text-xs sm:text-sm">
@@ -330,23 +301,34 @@ export const Team: React.FC = () => {
             </div>
           </div>
           
+          {isError && (
+            <div className="rounded-md bg-destructive/15 p-4 flex items-center">
+              <AlertCircle className="h-5 w-5 text-destructive mr-3" />
+              <div className="text-destructive">Error loading team members. Please try again later.</div>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-            {teamMembers.map((member) => (
-              <MemberCard
-                key={member.id}
-                name={member.name}
-                position={member.position}
-                email={member.email}
-                phone={member.phone}
-                avatar={member.avatar}
-                projects={member.projects}
-                projectsCompleted={member.projectsCompleted}
-                tasks={member.tasks}
-                tasksCompleted={member.tasksCompleted}
-                performance={member.performance}
-                availability={member.availability}
-              />
-            ))}
+            {isLoading ? (
+              Array(6).fill(0).map((_, index) => (
+                <MemberCardSkeleton key={index} />
+              ))
+            ) : teamMembers && teamMembers.length > 0 ? (
+              teamMembers.map((member) => (
+                <MemberCard
+                  key={member.id}
+                  {...member}
+                />
+              ))
+            ) : !isError ? (
+              <div className="col-span-full text-center py-10">
+                <div className="text-muted-foreground">No team members found.</div>
+                <Button className="mt-4" size="sm">
+                  <UserPlus size={16} className="mr-2" />
+                  Add Team Member
+                </Button>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
