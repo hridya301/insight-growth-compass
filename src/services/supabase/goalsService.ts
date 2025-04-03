@@ -64,7 +64,7 @@ export const goalsService = {
         title: goal.title,
         description: goal.description,
         progress: goal.progress,
-        due_date: goal.due_date,
+        due_date: typeof goal.due_date === 'object' ? goal.due_date.toISOString() : goal.due_date,
         status: goal.status,
         priority: goal.priority,
         category: goal.category
@@ -95,7 +95,7 @@ export const goalsService = {
       if (goal.title) updateData.title = goal.title;
       if (goal.description) updateData.description = goal.description;
       if (goal.progress !== undefined) updateData.progress = goal.progress;
-      if (goal.due_date) updateData.due_date = goal.due_date;
+      if (goal.due_date) updateData.due_date = typeof goal.due_date === 'object' ? goal.due_date.toISOString() : goal.due_date;
       if (goal.status) updateData.status = goal.status;
       if (goal.priority) updateData.priority = goal.priority;
       if (goal.category) updateData.category = goal.category;
