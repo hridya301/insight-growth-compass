@@ -3,22 +3,13 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  BarChart3, 
-  Lightbulb, 
-  TrendingUp,
-  UserPlus 
-} from 'lucide-react';
+import { LayoutDashboard, UserPlus } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
 
   const navigationOptions = [
     { title: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard className="mr-2 h-5 w-5" /> },
-    { title: 'Analytics', path: '/analytics', icon: <BarChart3 className="mr-2 h-5 w-5" /> },
-    { title: 'Insights', path: '/insights', icon: <Lightbulb className="mr-2 h-5 w-5" /> },
-    { title: 'Competitors', path: '/competitors', icon: <TrendingUp className="mr-2 h-5 w-5" /> },
     { title: 'Complete Onboarding', path: '/onboarding', icon: <UserPlus className="mr-2 h-5 w-5" /> }
   ];
 
@@ -34,7 +25,7 @@ const Index = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
             {navigationOptions.map((option) => (
               <Button 
                 key={option.path}
