@@ -1,13 +1,26 @@
 
 import React from 'react';
-import { Onboarding } from '@/components/Onboarding';
-import { PollCreator } from '@/components/PollCreator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  BarChart3, 
+  Lightbulb, 
+  TrendingUp,
+  UserPlus 
+} from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
+
+  const navigationOptions = [
+    { title: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard className="mr-2 h-5 w-5" /> },
+    { title: 'Analytics', path: '/analytics', icon: <BarChart3 className="mr-2 h-5 w-5" /> },
+    { title: 'Insights', path: '/insights', icon: <Lightbulb className="mr-2 h-5 w-5" /> },
+    { title: 'Competitors', path: '/competitors', icon: <TrendingUp className="mr-2 h-5 w-5" /> },
+    { title: 'Complete Onboarding', path: '/onboarding', icon: <UserPlus className="mr-2 h-5 w-5" /> }
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
@@ -17,15 +30,22 @@ const Index = () => {
             Welcome to <span className="text-indigo-600">InsightGrowth</span>
           </CardTitle>
           <CardDescription className="text-center">
-            Start by creating your company profile or exploring our poll feature
+            Navigate to any section of the application
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-6 justify-center items-center">
-            <Button onClick={() => navigate('/onboarding')} className="w-full md:w-auto px-8">
-              Complete Onboarding
-            </Button>
-            <PollCreator />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {navigationOptions.map((option) => (
+              <Button 
+                key={option.path}
+                onClick={() => navigate(option.path)} 
+                className="flex items-center justify-center h-16 text-md"
+                variant={option.path === '/onboarding' ? 'default' : 'outline'}
+              >
+                {option.icon}
+                {option.title}
+              </Button>
+            ))}
           </div>
           
           <div className="mt-12 text-center text-gray-500 text-sm">
