@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -13,78 +13,23 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { goalsService, Goal as GoalType } from '@/services/mongodb/goalsService';
 
 // Goal interface for better type safety
 interface Goal {
-  id: number;
+  _id?: string;
+  id?: number;
   title: string;
   description: string;
   progress: number;
   dueDate: string;
   status: string;
   priority: string;
+  category?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
-
-// Sample data for goals
-const quarterlyGoals = [
-  { 
-    id: 1, 
-    title: 'Increase Market Share', 
-    description: 'Grow market share by 5% within the quarter', 
-    progress: 65, 
-    dueDate: '2025-06-30',
-    status: 'In Progress',
-    priority: 'High'
-  },
-  { 
-    id: 2, 
-    title: 'Launch New Product Feature', 
-    description: 'Release v2.0 with AI-powered recommendations', 
-    progress: 80, 
-    dueDate: '2025-05-15',
-    status: 'In Progress',
-    priority: 'Critical'
-  },
-  { 
-    id: 3, 
-    title: 'Reduce Customer Churn', 
-    description: 'Decrease monthly churn rate from 3.2% to 2.5%', 
-    progress: 40, 
-    dueDate: '2025-06-30',
-    status: 'In Progress',
-    priority: 'Medium'
-  },
-  { 
-    id: 4, 
-    title: 'Establish Strategic Partnership', 
-    description: 'Secure at least two new integration partners', 
-    progress: 25, 
-    dueDate: '2025-07-10',
-    status: 'Early Stage',
-    priority: 'Medium'
-  }
-];
-
-const annualGoals = [
-  { 
-    id: 1, 
-    title: 'Revenue Growth', 
-    description: 'Achieve $10M in annual recurring revenue', 
-    progress: 35, 
-    dueDate: '2025-12-31',
-    status: 'On Track',
-    priority: 'High'
-  },
-  { 
-    id: 2, 
-    title: 'International Expansion', 
-    description: 'Enter at least 3 new international markets', 
-    progress: 20, 
-    dueDate: '2025-12-31',
-    status: 'Early Stage',
-    priority: 'Medium'
-  }
-];
 
 // Define the goal schema for form validation
 const goalSchema = z.object({
@@ -109,7 +54,7 @@ type ProgressUpdateValues = z.infer<typeof progressUpdateSchema>;
 
 const GoalCard: React.FC<{
   goal: Goal;
-  onUpdateProgress: (goalId: number, data: Partial<Goal>) => void;
+  onUpdateProgress: (goalId: string, data: Partial<Goal>) => void;
 }> = ({ goal, onUpdateProgress }) => {
   const date = new Date(goal.dueDate);
   const formattedDate = `${date.toLocaleString('default', { month: 'short' })} ${date.getDate()}, ${date.getFullYear()}`;
@@ -127,7 +72,7 @@ const GoalCard: React.FC<{
   });
 
   const handleProgressUpdate = (data: ProgressUpdateValues) => {
-    onUpdateProgress(goal.id, {
+    onUpdateProgress(goal._id || '', {
       progress: data.progress,
       status: data.status
     });
@@ -377,10 +322,61 @@ const GoalCard: React.FC<{
 };
 
 export const Goals: React.FC = () => {
-  const [quarterlyList, setQuarterlyList] = useState<Goal[]>(quarterlyGoals);
-  const [annualList, setAnnualList] = useState<Goal[]>(annualGoals);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Fetch goals from database
+  const { data: allGoals = [], isLoading: isLoadingGoals } = useQuery({
+    queryKey: ['goals'],
+    queryFn: goalsService.getGoals,
+  });
+
+  // Filter by category
+  const quarterlyGoals = allGoals.filter((goal: Goal) => goal.category === "Quarterly");
+  const annualGoals = allGoals.filter((goal: Goal) => goal.category === "Annual");
+
+  // Create new goal mutation
+  const createGoalMutation = useMutation({
+    mutationFn: (newGoal: Omit<GoalType, '_id'>) => goalsService.createGoal(newGoal),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      setDialogOpen(false);
+      toast({
+        title: "Goal Created",
+        description: "Your goal has been successfully created.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error creating goal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create goal. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Update goal mutation
+  const updateGoalMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string, data: Partial<GoalType> }) => 
+      goalsService.updateGoal(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      toast({
+        title: "Goal Updated",
+        description: "Your goal has been successfully updated.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error updating goal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update goal. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
 
   const form = useForm<GoalFormValues>({
     resolver: zodResolver(goalSchema),
@@ -394,42 +390,40 @@ export const Goals: React.FC = () => {
   });
 
   const onSubmit = (values: GoalFormValues) => {
-    const newGoal = {
-      id: Date.now(),
+    createGoalMutation.mutate({
       title: values.title,
       description: values.description,
       progress: 0,
-      dueDate: values.dueDate,
+      dueDate: new Date(values.dueDate),
       status: "Early Stage",
-      priority: values.priority
-    };
-
-    if (values.category === "Quarterly") {
-      setQuarterlyList([...quarterlyList, newGoal]);
-    } else {
-      setAnnualList([...annualList, newGoal]);
-    }
-
-    toast({
-      title: "Goal Created",
-      description: `'${values.title}' has been added to your ${values.category.toLowerCase()} goals.`,
+      priority: values.priority,
+      category: values.category,
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
 
-    setDialogOpen(false);
     form.reset();
   };
 
   // Function to update a specific goal's progress
-  const handleUpdateGoal = (goalId: number, updatedData: Partial<Goal>, isQuarterly: boolean) => {
-    if (isQuarterly) {
-      setQuarterlyList(quarterlyList.map(goal => 
-        goal.id === goalId ? { ...goal, ...updatedData } : goal
-      ));
-    } else {
-      setAnnualList(annualList.map(goal => 
-        goal.id === goalId ? { ...goal, ...updatedData } : goal
-      ));
-    }
+  const handleUpdateGoal = (goalId: string, updatedData: Partial<Goal>) => {
+    updateGoalMutation.mutate({
+      id: goalId,
+      data: updatedData
+    });
+  };
+
+  // Calculate average progress
+  const calculateAverageProgress = (goals: Goal[]) => {
+    if (goals.length === 0) return 0;
+    return Math.round(goals.reduce((sum, goal) => sum + goal.progress, 0) / goals.length);
+  };
+
+  // Get top performers
+  const getTopPerformers = () => {
+    return [...quarterlyGoals, ...annualGoals]
+      .sort((a, b) => b.progress - a.progress)
+      .slice(0, 2);
   };
 
   return (
@@ -569,123 +563,129 @@ export const Goals: React.FC = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Target className="mr-2" size={20} />
-              Goal Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Quarterly Goals</span>
-                <span className="text-sm font-medium">{quarterlyList.length} Active</span>
-              </div>
-              <Progress 
-                value={
-                  quarterlyList.length > 0
-                    ? quarterlyList.reduce((sum, goal) => sum + goal.progress, 0) / quarterlyList.length
-                    : 0
-                } 
-                className="h-2" 
-              />
-              <div className="text-xs text-muted-foreground">
-                {quarterlyList.length > 0
-                  ? Math.round(quarterlyList.reduce((sum, goal) => sum + goal.progress, 0) / quarterlyList.length)
-                  : 0}% average completion
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Annual Goals</span>
-                <span className="text-sm font-medium">{annualList.length} Active</span>
-              </div>
-              <Progress 
-                value={
-                  annualList.length > 0
-                    ? annualList.reduce((sum, goal) => sum + goal.progress, 0) / annualList.length
-                    : 0
-                } 
-                className="h-2" 
-              />
-              <div className="text-xs text-muted-foreground">
-                {annualList.length > 0
-                  ? Math.round(annualList.reduce((sum, goal) => sum + goal.progress, 0) / annualList.length)
-                  : 0}% average completion
-              </div>
-            </div>
-            
-            <div className="pt-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <TrendingUp className="mr-2" size={16} />
-                  <span className="text-sm font-medium">Top Performers</span>
+      {isLoadingGoals ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-300">Loading goals...</p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="md:col-span-1">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Target className="mr-2" size={20} />
+                Goal Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Quarterly Goals</span>
+                  <span className="text-sm font-medium">{quarterlyGoals.length} Active</span>
+                </div>
+                <Progress 
+                  value={calculateAverageProgress(quarterlyGoals)} 
+                  className="h-2" 
+                />
+                <div className="text-xs text-muted-foreground">
+                  {calculateAverageProgress(quarterlyGoals)}% average completion
                 </div>
               </div>
-              <div className="text-sm">
-                {[...quarterlyList, ...annualList]
-                  .sort((a, b) => b.progress - a.progress)
-                  .slice(0, 2)
-                  .map((goal) => (
-                    <div key={`top-${goal.id}`} className="flex justify-between py-1">
+              
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Annual Goals</span>
+                  <span className="text-sm font-medium">{annualGoals.length} Active</span>
+                </div>
+                <Progress 
+                  value={calculateAverageProgress(annualGoals)} 
+                  className="h-2" 
+                />
+                <div className="text-xs text-muted-foreground">
+                  {calculateAverageProgress(annualGoals)}% average completion
+                </div>
+              </div>
+              
+              <div className="pt-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <TrendingUp className="mr-2" size={16} />
+                    <span className="text-sm font-medium">Top Performers</span>
+                  </div>
+                </div>
+                <div className="text-sm">
+                  {getTopPerformers().map((goal) => (
+                    <div key={`top-${goal._id}`} className="flex justify-between py-1">
                       <span>{goal.title}</span>
                       <span className="font-medium">{goal.progress}%</span>
                     </div>
                   ))}
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button variant="outline" className="w-full">
+                <Flag size={16} className="mr-2" />
+                Manage Goal Categories
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          <div className="md:col-span-2 space-y-6">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold flex items-center">
+                  <CheckCircle size={18} className="mr-2" />
+                  Quarterly Goals (Q2 2025)
+                </h2>
+                <Button variant="outline" size="sm">View All</Button>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {quarterlyGoals.map((goal) => (
+                  <GoalCard
+                    key={goal._id}
+                    goal={goal}
+                    onUpdateProgress={handleUpdateGoal}
+                  />
+                ))}
+                {quarterlyGoals.length === 0 && (
+                  <div className="col-span-full text-center py-10 border border-dashed rounded-lg">
+                    <Target size={30} className="mx-auto text-gray-400 mb-2" />
+                    <p className="text-gray-500">No quarterly goals yet. Create your first one!</p>
+                  </div>
+                )}
               </div>
             </div>
-          </CardContent>
-          <CardFooter>
-            <Button variant="outline" className="w-full">
-              <Flag size={16} className="mr-2" />
-              Manage Goal Categories
-            </Button>
-          </CardFooter>
-        </Card>
-        
-        <div className="md:col-span-2 space-y-6">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold flex items-center">
-                <CheckCircle size={18} className="mr-2" />
-                Quarterly Goals (Q2 2025)
-              </h2>
-              <Button variant="outline" size="sm">View All</Button>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {quarterlyList.map((goal) => (
-                <GoalCard
-                  key={goal.id}
-                  goal={goal}
-                  onUpdateProgress={(goalId, data) => handleUpdateGoal(goalId, data, true)}
-                />
-              ))}
-            </div>
-          </div>
-          
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold flex items-center">
-                <CheckCircle size={18} className="mr-2" />
-                Annual Goals (2025)
-              </h2>
-              <Button variant="outline" size="sm">View All</Button>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {annualList.map((goal) => (
-                <GoalCard
-                  key={goal.id}
-                  goal={goal}
-                  onUpdateProgress={(goalId, data) => handleUpdateGoal(goalId, data, false)}
-                />
-              ))}
+            
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold flex items-center">
+                  <CheckCircle size={18} className="mr-2" />
+                  Annual Goals (2025)
+                </h2>
+                <Button variant="outline" size="sm">View All</Button>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {annualGoals.map((goal) => (
+                  <GoalCard
+                    key={goal._id}
+                    goal={goal}
+                    onUpdateProgress={handleUpdateGoal}
+                  />
+                ))}
+                {annualGoals.length === 0 && (
+                  <div className="col-span-full text-center py-10 border border-dashed rounded-lg">
+                    <Target size={30} className="mx-auto text-gray-400 mb-2" />
+                    <p className="text-gray-500">No annual goals yet. Create your first one!</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
