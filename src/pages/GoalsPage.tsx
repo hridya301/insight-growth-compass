@@ -23,13 +23,13 @@ const GoalsPage = () => {
         setIsConnected(true);
         toast({
           title: "Database connected",
-          description: "Successfully connected to MongoDB Atlas.",
+          description: "Successfully connected to database (mock in browser environment).",
         });
       } catch (error) {
-        console.error("Failed to connect to MongoDB", error);
+        console.error("Failed to connect to database", error);
         toast({
           title: "Connection failed",
-          description: "Could not connect to MongoDB. Check your credentials.",
+          description: "Could not connect to database. Check your environment setup.",
           variant: "destructive",
         });
       } finally {
@@ -57,9 +57,12 @@ const GoalsPage = () => {
             <>
               {!isConnected && (
                 <div className="p-4 mb-4 text-sm text-red-800 bg-red-100 rounded-lg dark:bg-red-800/30 dark:text-red-300">
-                  <p>Could not connect to MongoDB. Please check your .env file and make sure VITE_MONGODB_URI is set correctly.</p>
+                  <p>Could not connect to database. Please check your configuration.</p>
                 </div>
               )}
+              <div className="p-4 mb-4 text-sm text-blue-800 bg-blue-100 rounded-lg dark:bg-blue-800/30 dark:text-blue-300">
+                <p>Running with mock database in browser environment. For a real database connection, you would need a server-side solution.</p>
+              </div>
               <Goals />
             </>
           )}

@@ -23,8 +23,5 @@ export default defineConfig(({ mode }) => ({
   // Add environment variable definition
   define: {
     __APP_ENV__: JSON.stringify(process.env.APP_ENV),
-  },
-  optimizeDeps: {
-    include: ['mongodb'],
   }
 }));
